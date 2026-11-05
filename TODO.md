@@ -11,7 +11,15 @@ Project: point-in-time (PIT) replication of Kaniel, Lin, Pelger and Van Nieuwerb
 - [ ] 1. Build `data_loader` and `data_processing` for the CRSP fund panel (WRDS): aggregate share classes to fund level; compute flow, fund momentum, Carhart abnormal returns (36-month loadings) → verify: unit tests on shape and dates; summary stats match paper (mean abnormal return ≈ −0.03%/month, sd ≈ 2.00%)
 - [ ] 2. Add an availability-date field to every input and a guard that rejects features dated after the forecast date → verify: test that shifting a feature's date forward changes the output
 - [ ] Data hygiene: keep dead funds; no outcome-based sample filter (do not require a return at t)
-- [ ] Pull Carhart factors (Ken French) and Baker-Wurgler sentiment (as first released, or rebuilt monthly with data to date)
+
+### Data to pull (raw into `data/raw/`, immutable; sample 1980-01 to latest, paper comparison ends 2019-01)
+- [ ] CRSP Mutual Fund database (WRDS): monthly fund returns, TNA, expense ratio, turnover, objective codes, share-class fields (for aggregation to fund level), fund family identifiers
+- [ ] Carhart four factors (Ken French data library): market, size, value, momentum, plus risk-free rate
+- [ ] Baker-Wurgler sentiment index, as first released; also the inputs to rebuild it monthly with data to date
+- [ ] Optional: CFNAI (Chicago Fed), the paper's alternative macro state
+- [ ] Holdings-based inputs for the 46 stock characteristics (not in the proposal's dataset table; implied by the paper, decide scope before pulling): Thomson mutual fund holdings linked to CRSP, CRSP stock returns, Compustat fundamentals with a stated reporting lag
+- [ ] Extra factors for the eight-factor robustness check (confirm which eight the paper uses)
+- [ ] Record the pull date and WRDS vintage for each raw file (CRSP revises its data)
 
 ### Models and comparison
 - [ ] 3. Replicate the paper design (random folds, 1980-01 to 2019-01) as benchmark → verify: decile spread of the same order as +72% / −119%
