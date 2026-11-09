@@ -55,5 +55,6 @@ Non-WRDS data (sources in `DATA.md`)
 - [ ] 10. Write up in `reports/`, citing source notes in `research/` → verify: reviewed by the technical-reviewer agent
 
 ## Done
+- [x] Implemented a read-only raw-data inventory; see `reports/2026-11-09-data-audit.md`. D5 remains blocked pending re-export or reconciliation.
 - [x] Project scaffold
 - [x] Research proposal drafted (`reports/2026-10-22-research-proposal.md`)

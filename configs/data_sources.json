@@ -1,0 +1,174 @@
+{
+  "sources": [
+    {
+      "id": "D1a",
+      "path": "D1a_CRSP_monthly_returns.csv",
+      "kind": "csv",
+      "encoding": "utf-8",
+      "date": "caldt",
+      "keys": [
+        "crsp_fundno",
+        "caldt"
+      ],
+      "numeric": [
+        "mtna",
+        "mret",
+        "mnav"
+      ],
+      "codes": {
+        "mtna": [
+          "T"
+        ],
+        "mret": [
+          "R"
+        ],
+        "mnav": [
+          "N"
+        ]
+      },
+      "availability": "Unknown; monthly return and TNA publication timing must be verified.",
+      "source": "WRDS CRSP Mutual Funds monthly_tna_ret_nav",
+      "pull_date": "2026-11-06",
+      "vintage": "WRDS release not recorded",
+      "query": "not recorded; see DATA.md"
+    },
+    {
+      "id": "D1b",
+      "path": "D1b_CRSP_fund_summary.csv",
+      "kind": "csv",
+      "encoding": "latin-1",
+      "date": "caldt",
+      "keys": [
+        "crsp_fundno",
+        "caldt"
+      ],
+      "numeric": [
+        "exp_ratio",
+        "turn_ratio",
+        "per_com"
+      ],
+      "coverage": [
+        "crsp_cl_grp",
+        "crsp_portno",
+        "crsp_obj_cd",
+        "mgmt_cd"
+      ],
+      "availability": "Unknown; fiscal-year expense and other attributes require field-specific publication dates.",
+      "source": "WRDS CRSP Mutual Funds fund_summary2",
+      "pull_date": "2026-11-06",
+      "vintage": "WRDS release not recorded",
+      "query": "not recorded; see DATA.md"
+    },
+    {
+      "id": "D2_research",
+      "path": "D2_Carhart_factors/D2_Carhart_factors_research.csv",
+      "archive": "D2_Carhart_factors/D2_Carhart_factors_research.zip",
+      "kind": "factor",
+      "availability": "Factor publication timing and historical vintages not established.",
+      "source": "Ken French Data Library Fama/French research factors",
+      "pull_date": "2026-11-06",
+      "vintage": "202609 CRSP database",
+      "query": "not recorded; see DATA.md"
+    },
+    {
+      "id": "D2_momentum",
+      "path": "D2_Carhart_factors/D2_Carhart_factors_momentum.csv",
+      "archive": "D2_Carhart_factors/D2_Carhart_factors_momentum.zip",
+      "kind": "factor",
+      "availability": "Factor publication timing and historical vintages not established.",
+      "source": "Ken French Data Library momentum factor",
+      "pull_date": "2026-11-06",
+      "vintage": "202609 CRSP database",
+      "query": "not recorded; see DATA.md"
+    },
+    {
+      "id": "D3",
+      "path": "D3_Baker_Wurgler_sentiment.xlsx",
+      "kind": "xlsx",
+      "availability": "March 2026 revised vintage; first-release publication dates not established.",
+      "source": "Baker-Wurgler investor sentiment",
+      "pull_date": "2026-11-06",
+      "vintage": "March 2026 update",
+      "query": "not recorded; see DATA.md"
+    },
+    {
+      "id": "D5",
+      "path": "D5_CRSP_mutual_fund_holdings.csv",
+      "kind": "csv",
+      "encoding": "utf-8",
+      "date": "report_dt",
+      "numeric": [
+        "percent_tna",
+        "nbr_shares",
+        "market_val"
+      ],
+      "coverage": [
+        "crsp_portno",
+        "permno",
+        "cusip",
+        "eff_dt"
+      ],
+      "availability": "Meaning of eff_dt and existence of public filing availability date unverified.",
+      "source": "WRDS CRSP Mutual Funds portfolio holdings",
+      "pull_date": null,
+      "vintage": "not recorded",
+      "query": "not recorded; see DATA.md"
+    },
+    {
+      "id": "D6",
+      "path": "D6_CRSP_monthly_stock_returns.csv",
+      "kind": "csv",
+      "encoding": "utf-8",
+      "date": "MthCalDt",
+      "keys": [
+        "PERMNO",
+        "MthCalDt"
+      ],
+      "numeric": [
+        "MthRet",
+        "MthPrc",
+        "MthCap"
+      ],
+      "coverage": [
+        "PERMNO",
+        "MthDelFlg",
+        "DisExDt"
+      ],
+      "availability": "Security information and return/delisting availability conventions require verification.",
+      "source": "WRDS CRSP monthly stock file",
+      "pull_date": null,
+      "vintage": "not recorded",
+      "query": "not recorded; see DATA.md"
+    },
+    {
+      "id": "D7",
+      "path": "D7_Compustat_monthly_security.csv",
+      "kind": "csv",
+      "encoding": "utf-8",
+      "date": "datadate",
+      "keys": [
+        "LPERMNO",
+        "datadate"
+      ],
+      "numeric": [
+        "prccm",
+        "trt1m",
+        "cshom"
+      ],
+      "coverage": [
+        "GVKEY",
+        "LPERMNO",
+        "LINKDT",
+        "LINKENDDT"
+      ],
+      "link_start": "LINKDT",
+      "link_end": "LINKENDDT",
+      "documented_pull_date": "2026-11-06",
+      "availability": "Market and link dates require verification; accounting fundamentals absent.",
+      "source": "WRDS Compustat security monthly with CRSP link",
+      "pull_date": "2026-11-06",
+      "vintage": "WRDS release not recorded",
+      "query": "not recorded; see DATA.md"
+    }
+  ]
+}

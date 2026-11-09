@@ -1,41 +1,38 @@
-# 5253 Asset Mgmt
+# Point-in-time mutual fund research
 
-Estimates the true breadth N (effective number of independent bets) of a portfolio or signal set, and tests whether that breadth holds up under market stress.
+This project tests whether mutual fund characteristics predict next-month risk-adjusted returns using information available at portfolio formation. The research proposal is in [reports/2026-10-22-research-proposal.md](reports/2026-10-22-research-proposal.md).
 
-## Quickstart
+The first milestone is a read-only raw-data audit. Fund panel construction and models are not implemented yet.
+
+## Setup
 
 ```bash
-# 1. Clone
-git clone <repo-url> && cd 5253-asset_mgmt
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
 
-# 2. Install dependencies
-python -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]"
+## Audit the supplied files
 
-# 3. Run tests
+Keep the original files together under a raw-data directory, in the layout specified by [configs/data_sources.json](configs/data_sources.json). Run:
+
+```bash
+python -m src.data_loader.audit_cli --raw-dir /path/to/raw
+```
+
+The command streams the CSV files, records SHA-256 checksums, checks row widths and selected dates and keys, profiles configured fields, inspects the sentiment workbook, and compares each factor CSV to its ZIP member. The machine-readable inventory is written to `data/audit/data_inventory.json` by default. Use `--output` to choose another path **outside** the raw directory, or `--manifest` to provide a different source manifest. The `data/` directory is ignored by Git.
+
+The command processes all configured sources and returns a nonzero exit code if a source is missing, malformed or fails a structural check. Duplicate-key counts are fingerprint-based candidates and require exact verification; they do not automatically establish that the data are invalid. A `profiled` status means structural checks passed, not that an input is point-in-time or cleared for modeling. Publication timing, historical revisions, security definitions and numerical anomalies still require review.
+
+## Tests
+
+```bash
+python -m unittest discover -v
 pytest
+ruff check .
+mypy src
 ```
 
-## Usage
+## Layout
 
-```python
-from src.data_loader import load_data
-
-data = load_data("data/raw/example.csv")
-```
-
-## Architecture
-
-data_loader -> data_processing -> feature_registry -> transformations -> breadth estimation (stress vs. normal regimes).
-Breadth estimators and stress-regime definitions are not yet implemented; see TODO.md.
-
-## Project Structure
-
-```
-data/{raw,interim,processed}   datasets (gitignored)
-src/{config,models,data_loader,data_processing,feature_registry,transformations,utils}
-tests/        mirrors src/
-scripts/      standalone utilities
-notebooks/    exploration only
-research/     notes and literature
-reports/      generated reports
-```
+`configs/` contains source settings. `src/data_loader/` contains the audit, `tests/` its fixtures, and `reports/` research documents. `data/` is for ignored raw and derived data; source paths are configurable and raw inputs are never edited by the audit.
