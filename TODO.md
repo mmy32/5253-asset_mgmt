@@ -8,7 +8,7 @@ Project: point-in-time (PIT) replication of Kaniel, Lin, Pelger and Van Nieuwerb
 ## Backlog
 
 ### Data and guards
-- [ ] 1. Build `data_loader` and `data_processing` for the CRSP fund panel (WRDS): aggregate share classes to fund level; compute flow, fund momentum, Carhart abnormal returns (36-month loadings) → verify: unit tests on shape and dates; summary stats match paper (mean abnormal return ≈ −0.03%/month, sd ≈ 2.00%)
+- [ ] 1. Extend and validate the initial CRSP fund panel (WRDS): aggregate share classes to fund level; compute flow, fund momentum, Carhart abnormal returns (36-month loadings) → verify: unit tests on shape and dates; summary stats match paper (mean abnormal return ≈ −0.03%/month, sd ≈ 2.00%)
 - [ ] 2. Add an availability-date field to every input and a guard that rejects features dated after the forecast date → verify: test that shifting a feature's date forward changes the output
 - [ ] Data hygiene: keep dead funds; no outcome-based sample filter (do not require a return at t)
 
@@ -55,6 +55,7 @@ Non-WRDS data (sources in `DATA.md`)
 - [ ] 10. Write up in `reports/`, citing source notes in `research/` → verify: reviewed by the technical-reviewer agent
 
 ## Done
+- [x] Built an initial fund-only panel, target and coverage reports with documented availability assumptions; see `reports/2026-11-09-fund-panel.md`. Fund and family age remain unavailable from verified historical inputs.
 - [x] Implemented a read-only raw-data inventory; see `reports/2026-11-09-data-audit.md`. D5 remains blocked pending re-export or reconciliation.
 - [x] Project scaffold
 - [x] Research proposal drafted (`reports/2026-10-22-research-proposal.md`)

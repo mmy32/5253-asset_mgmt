@@ -1,0 +1,11 @@
+{
+  "formation_start": "1999-01-31",
+  "formation_end": "2026-09-30",
+  "summary_lag_days": 90,
+  "summary_max_age_days": 365,
+  "fiscal_lag_days": 180,
+  "fee_max_age_days": 730,
+  "max_fund_return": 1.0,
+  "memory_limit": "1GB",
+  "threads": 2
+}
