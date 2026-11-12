@@ -13,8 +13,8 @@ Context: `reports/2026-10-22-research-proposal.md`, `TODO.md`.
 | D2 | Carhart four factors + risk-free | `D2_Carhart_factors/` (4 files) | [Ken French data library](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html) | 1926-07 to 2026-09 |
 | D3 | Baker-Wurgler sentiment | `D3_Baker_Wurgler_sentiment.xlsx` | [Wurgler site](https://pages.stern.nyu.edu/~jwurgler/) | 1958-01 to 2025-12 |
 | D4 | CFNAI (optional) | not pulled | [Chicago Fed](https://www.chicagofed.org/research/data/cfnai/current-data) | not pulled |
-| D5 | CRSP mutual fund portfolio holdings (instead of Thomson) | `D5_CRSP_mutual_fund_holdings.csv` | [WRDS CRSP Mutual Funds: Portfolio Holdings](https://wrds-www-wharton-upenn-edu.proxy.library.cornell.edu/pages/get-data/center-research-security-prices-crsp/quarterly-update/mutual-funds/portfolio-holdings/) (the LSEG S12 page, https://wrds-www-wharton-upenn-edu.proxy.library.cornell.edu/pages/get-data/lseg/mutual-fund-holdings-s12/, was tried and not used) | not pulled |
-| D6 | CRSP monthly stock returns | `D6_CRSP_monthly_stock_returns.csv` | [WRDS CRSP Monthly Stock File](https://wrds-www-wharton-upenn-edu.proxy.library.cornell.edu/pages/get-data/center-research-security-prices-crsp/monthly-update/stock-version-2/monthly-stock-file/) | not pulled |
+| D5 | CRSP mutual fund portfolio holdings (instead of Thomson) | `D5_CRSP_mutual_fund_holdings.csv` | [WRDS CRSP Mutual Funds: Portfolio Holdings](https://wrds-www-wharton-upenn-edu.proxy.library.cornell.edu/pages/get-data/center-research-security-prices-crsp/quarterly-update/mutual-funds/portfolio-holdings/) (the LSEG S12 page, https://wrds-www-wharton-upenn-edu.proxy.library.cornell.edu/pages/get-data/lseg/mutual-fund-holdings-s12/, was tried and not used) | 2001-12 to 2026-08 (subset of funds; unused under Option A) |
+| D6 | CRSP monthly stock returns | `D6_CRSP_monthly_stock_returns.csv` | [WRDS CRSP Monthly Stock File](https://wrds-www-wharton-upenn-edu.proxy.library.cornell.edu/pages/get-data/center-research-security-prices-crsp/monthly-update/stock-version-2/monthly-stock-file/) | 1976-01 to 2026-09 (unused under Option A) |
 | D7 | Compustat/CRSP monthly security file | `D7_Compustat_monthly_security.csv` | [WRDS CRSP/Compustat Merged: Security Monthly](https://wrds-www-wharton-upenn-edu.proxy.library.cornell.edu/pages/get-data/center-research-security-prices-crsp/annual-update/crspcompustat-merged/security-monthly/) | 1976-06 to 2026-11 |
 | D8 | Extra factors for eight-factor check | not pulled | TBD | not pulled |
 
@@ -133,20 +133,32 @@ Split into sub-pulls by WRDS table. Both are downloaded. D1b starts 1999-03, so 
 - **Everything else:** TBD
 - **Used by:** step 9 (alternative macro state)
 
-### D5. Thomson mutual fund holdings
-- **Source and access path:** WRDS, Thomson Financial holdings, linked to CRSP funds.
-- **Frequency:** quarterly
-- **Requested date range:** about 1970 to latest available (holdings data in the paper start 1980)
-- **Known issues:** quarter-end snapshots. Pull both the report date and the filing date; the paper does not say which it uses.
-- **Everything else:** TBD
-- **Used by:** step 1 (holdings-weighted stock characteristics). Scope not yet decided.
+### D5. CRSP mutual fund portfolio holdings (unused under Option A)
+- **Source and access path:** WRDS CRSP Mutual Funds, Portfolio Holdings (see Summary). Replaces the Thomson/S12 holdings the paper uses; the S12 page was tried and not used.
+- **Variables pulled:** `crsp_portno`, `report_dt`, `security_rank`, `eff_dt`, `percent_tna`, `nbr_shares`, `market_val`, `crsp_company_key`, `security_name`, `cusip`, `permno`, `permco`, `ticker`, `coupon`, `maturity_dt`.
+- **Frequency:** quarterly or monthly report dates (308 distinct `report_dt`).
+- **Actual date range returned:** `report_dt` 2001-12-31 to 2026-08-31.
+- **Pull date:** downloaded 2026-11-08 (file timestamp). WRDS release not recorded.
+- **Raw file:** `data/raw/D5_CRSP_mutual_fund_holdings.csv`, 591 MB, 5,418,660 data rows, 1,020 distinct `crsp_portno`. SHA-256 `af08347a23e5c2ab171429f02aa6a52e3440d047faee5ba4c770d3cc3122cbd4`.
+- **Known issues:**
+  - **Incomplete fund coverage:** all 1,020 portfolios link to D1b, but that is about 4.6% of the 15,651 portfolios D1b gives equity-domestic objective codes (`crsp_obj_cd` starting `ED`). Funds per year: 730 (2002), 996 (2003), 934 (2009), 846 (2010), then 15 to 18 from 2011 on. The pull looks like a fixed list of funds that mostly stopped reporting around 2010.
+  - **Late start:** 2 funds in 2001, 730 in 2002. The paper's holdings start in 1980.
+  - **Missingness:** `permno` blank in 27.1% of rows, `percent_tna` in 6.4%, `cusip` in 9.1%; `market_val` is exactly 0 in 15.1%. `eff_dt` differs from `report_dt` in 54.6% of rows.
+- **Status:** unusable as pulled and out of scope under Option A. Redo the pull if Option B is revived.
+- **Used by:** none
 
-### D6. CRSP stock returns
-- **Source and access path:** WRDS, CRSP stock files.
+### D6. CRSP monthly stock file (unused under Option A)
+- **Source and access path:** WRDS CRSP Monthly Stock File (see Summary). Header uses the new CRSP flat-file naming (`PERMNO`, `MthRet`, `MthCap`, `YYYYMM`, and so on).
 - **Frequency:** monthly
-- **Requested date range:** about 1970 to latest available; extend earlier if a characteristic needs a longer lookback
-- **Everything else:** TBD
-- **Used by:** step 1 (stock characteristics). Scope not yet decided.
+- **Actual date range returned:** `YYYYMM` 197601 to 202609, all 609 months, 39,606 `PERMNO`.
+- **Pull date:** downloaded 2026-11-08 (file timestamp). Built on the 202609 CRSP database.
+- **Raw file:** `data/raw/D6_CRSP_monthly_stock_returns.csv`, 2.3 GB, 4,523,123 data rows. SHA-256 `b90924dc732abacf3d0e9af562cf2a443718bf98e522a7bcc0b95c3aad255a00`.
+- **Known issues:**
+  - **Duplicates:** 52,927 repeated (`PERMNO`, `YYYYMM`) pairs because the file carries dividend records; dedupe before use.
+  - **Non-equity rows:** `SecurityType` is EQTY 3,714,473, FUND 772,763, DERV 4,866.
+  - **Missingness and range:** `MthRet` blank in 1.6% of rows, range −1 to 39.
+- **Status:** not needed under Option A.
+- **Used by:** none
 
 ### D7. Compustat/CRSP monthly security file (merged link)
 - **Source and access path:** WRDS. The variable list (`gvkey`, `liid`, `linkdt`, `linkenddt`, `linkprim`, `linktype`, `lpermno`, `lpermco`, plus Compustat security-monthly fields) matches the Compustat Security Monthly table joined to the CRSP-Compustat link table. I have not recorded the exact WRDS query form. The file is named "Compustat fundamentals", but it contains **no balance-sheet or income-statement items**.
@@ -158,7 +170,7 @@ Split into sub-pulls by WRDS table. Both are downloaded. D1b starts 1999-03, so 
   - *S&P holdings fields:* `sph100`, `sphcusip`, `sphiid`, `sphmid`, `sphname`, `sphsec`, `sphtic`, `sphvg`.
 - **Key and date variable:** (`gvkey`, `iid`) or `lpermno`, with `datadate` (monthly month-end).
 - **Frequency:** monthly
-- **Actual date range returned:** `datadate` 1976-06-30 to 2026-11-30 (606 distinct dates). A `datadate` of 2026-11-30 is later than the download date (2026-11-06); I have not checked what those rows are.
+- **Actual date range returned:** `datadate` 1976-06-30 to 2026-11-30 (606 distinct dates). Rows dated 2026-10-31 (5,935) and 2026-11-30 (404) go past the 2026-09 cutoff of the other pulls, and 2026-11-30 is later than the download date (2026-11-06); trim them if D7 is ever used.
 - **Filters applied at pull time:** none recorded.
 - **Output format:** CSV. Read with `dtype=str` for `gvkey`, `liid`, `lpermno`, `cusip`.
 - **Pull date / vendor vintage:** downloaded 2026-11-06 (file timestamp). WRDS release not recorded.
@@ -173,7 +185,8 @@ Split into sub-pulls by WRDS table. Both are downloaded. D1b starts 1999-03, so 
   - **Descriptor fields are current:** `conm`, `sic`, `gsector`, `costat`, `dlrsn` and similar fields describe the company as of the pull date, not each month, so they are not point-in-time.
   - **Several fields are of little use:** address, phone, S&P holdings fields and web address.
   - **Not yet checked:** `datadate` after the download date, units of `cshom` and `cshoq`, and the numeric ranges of `prccm`, `trt1m`, `cshoq`, `cshom` (my profiling run stopped before these checks).
-- **Used by:** step 1 (stock characteristics, market-based part only). Scope not yet decided.
+- **Status:** not needed under Option A.
+- **Used by:** none
 
 ### D8. Extra factors for the eight-factor check
 - **Source and access path:** TBD. Which eight factors the paper uses is unconfirmed.
