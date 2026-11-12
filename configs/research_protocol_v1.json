@@ -1,0 +1,174 @@
+{
+  "protocol_id": "fund-flow-momentum-v1",
+  "registered_date": "2026-11-12",
+  "status": "design_registered_pending_panel_validation",
+  "change_policy": "Any change to v1 requires a new version and a dated explanation before evaluation.",
+  "research_question": "Does fund flow and momentum predict risk-adjusted returns under chronological training and conservative availability assumptions, and add long-only net value?",
+  "claims": {
+    "baseline": "availability-lagged chronological backtest using revised vintages",
+    "strict_pit": "requires separately substantiated historical values and publication dates",
+    "holdings": "out of scope; do not use D5",
+    "sentiment": "excluded from primary, revised-vintage extension only"
+  },
+  "hypotheses": {
+    "H1": "mean C top-minus-bottom abnormal return > 0; one-sided null <= 0",
+    "H2": "mean paired A minus B spread > 0; one-sided null <= 0",
+    "economic": "long-only net return relative to active and passive references after supportable costs"
+  },
+  "provenance": {
+    "code_commit": "8db95c4f0908eaf28eaf2ffc43d7f63e6fdbd58c",
+    "fund_panel_code_sha256": "e7edf1f986dfd66763c8278524bdfbfebe6051800950e02d648ac00bff731ada",
+    "fund_panel_config_sha256": "f72d6eefdb6c851b557b3320f341d2480c9055c6577aa77950f16c06c5af9795",
+    "fund_panel_db_sha256": "7ed6f922840cc38fa1e7a4b22d9de5bfd4d6048e6b4b68ebf032052fcf53e078",
+    "fund_panel_parquet_sha256": "b2eec47608cf6dc1c96ec242bd52ea13303cf1deb1e2186ff7a7188431747e81",
+    "class_lineage_parquet_sha256": "0aab432db9f3088ffed27ce25939868c37ddccb3214f038deb38ca71bfb1fddc",
+    "inputs_sha256": {
+      "D1a": "2dd6772a0fa618ca473d9651ecde283c2f107012668832215acf74d17450d738",
+      "D1b": "0e2edbd6d60d309320005d45d928ab6c34216ec0a138bd1a771aa33478d32b60",
+      "D2_research": "a3894d74d553cab812eabbe706bdbf443c97eb20b24b05e3e5f3ce47e46b90bb",
+      "D2_momentum": "81ff7cab5517159daa5a66c83fd90d4076a0864be2d5fef179719c0f9049a8cb",
+      "D3_extension_only": "3580398aaba6b72ad988844416c7b0ac9caca24fd2ab1d9149a983ec63b9f7a2"
+    },
+    "notes": "Panel and raw data remain local and ignored by Git. Overall target summary moments were inspected during prior panel diagnostics; no model or ranked-portfolio evaluation has been run."
+  },
+  "sample": {
+    "common_start": "1999-03-01",
+    "common_end": "2025-12-31",
+    "model_formation_start": "2002-01-31",
+    "initial_training_formation_end": "2016-12-31",
+    "initial_training_label_available_by": "2016-12-31",
+    "initial_validation_formation_start": "2017-01-31",
+    "initial_validation_formation_end": "2018-12-31",
+    "initial_validation_label_available_by": "2019-02-28",
+    "evaluation_formation_start": "2019-02-28",
+    "evaluation_formation_end": "2025-10-31",
+    "label_available_by": "2025-12-31",
+    "minimum_funds_per_month": 20,
+    "missing_features": "exclude from scoring at formation; report count, no imputation",
+    "missing_outcomes": "preserve formation and selected weights; do not set zero or renormalize; mark affected portfolio month missing"
+  },
+  "availability": {
+    "summary_lag_days": 90,
+    "summary_max_age_days": 365,
+    "fiscal_lag_days": 180,
+    "fee_max_age_days": 730,
+    "monthly_return_and_factor_availability": "end of following calendar month",
+    "target_availability": "end of formation month plus two months, conditional on available data",
+    "evidence": "assumptions, not independently verified publication dates"
+  },
+  "target": {
+    "formula": "(gross_return[t+1] - risk_free[t+1]) - beta[t] dot factors[t+1]",
+    "gross_approximation": "reported net + annual expense ratio / 12",
+    "factor_window": "t-35 through t inclusive",
+    "min_valid_months": 30,
+    "require_full_rank": true,
+    "subtract_intercept": false,
+    "beta_role": "ex-post outcome construction; not a formation-date feature",
+    "fund_net_return_cutoff": 1.0,
+    "target_membership": "share classes selected at formation; preserve missing future returns"
+  },
+  "features": {
+    "names": [
+      "flow",
+      "momentum_12_2"
+    ],
+    "momentum": "mean abnormal return t-11 through t-1, minimum 8",
+    "flow_C": "fund flow from return month t-1 using available lagged-TNA class aggregation",
+    "flow_A_B": "same flow definition applied to contemporaneous month t retrospectively, using fixed formation membership",
+    "eligibility": "canonical lagged formation rules; no conditioning on future outcome",
+    "preprocessing": "complete features only; training-only mean and population standard deviation; zero-variance feature invalidates fit"
+  },
+  "experiments": {
+    "A": {
+      "training": "three random month folds; one train, one validation, one test, rotate",
+      "feature_timing": "retrospective",
+      "fold_file": "configs/research_folds_v1.csv",
+      "fold_file_sha256": "ac4fc98a36c812314191eb223ddd7d7cd6cc7c029bc075b34ef668d70fac9991",
+      "fold_assignment": "sort 2002-01 through 2025-10 by SHA256 of UTF-8 string 5253|YYYY-MM; assign first 96, next 95, last 95 to folds 0,1,2",
+      "rotations": [
+        {
+          "test": 0,
+          "train": 1,
+          "validation": 2
+        },
+        {
+          "test": 1,
+          "train": 2,
+          "validation": 0
+        },
+        {
+          "test": 2,
+          "train": 0,
+          "validation": 1
+        }
+      ],
+      "label_cutoff": "2025-12-31",
+      "interpretation": "retrospective diagnostic; future months may train earlier predictions"
+    },
+    "B": {
+      "training": "expanding chronological",
+      "feature_timing": "same retrospective timing as A"
+    },
+    "C": {
+      "training": "expanding chronological",
+      "feature_timing": "conservative availability lags",
+      "primary": true
+    },
+    "D": {
+      "training": "same chronology as C",
+      "feature_timing": "C plus revised sentiment and explicit linear interactions",
+      "primary": false
+    },
+    "comparison": "primary C ranks on its own ex-ante eligible universe; matched A/B/C portfolio comparisons are ex-post diagnostics with missingness and full-universe results reported separately"
+  },
+  "model": {
+    "baseline": "rank on momentum_12_2",
+    "primary": "ridge with unpenalized intercept; minimize sum squared error plus alpha times squared coefficient norm",
+    "alpha_grid": [
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "validation": "equal weight per formation month, mean squared prediction error",
+    "ties": "smallest alpha",
+    "initial_tuning": "walk-forward validation in 2017-01 through 2018-12; only labels available by 2019-02-28",
+    "subsequent_tuning": "each January, use most recent 24 formation months whose outcomes are available by decision; walk-forward validation using data available at each historical validation date",
+    "refit": "each month, all available eligible earlier labels after tuning"
+  },
+  "portfolio": {
+    "deciles": "sort ascending prediction, ties by fund_id ascending; assign floor(10*zero_based_rank/n)+1",
+    "minimum_funds": 20,
+    "weights": "equal weight within decile",
+    "primary_research_spread": "top minus bottom abnormal returns",
+    "primary_economic": "long-only top decile on reported net class returns",
+    "retail_class_rule": "among classes with lagged retail/open indicators and known expense, lowest known expense; ties by crsp_fundno",
+    "retail_access": "proxy only unless minimums, investor access and opening status are independently verified",
+    "unavailable_month": "no month return if any positive-weight selected constituent lacks realized return; no zero substitution or renormalization",
+    "cost_scenarios_bps_per_traded_dollar": [
+      0,
+      25,
+      50
+    ],
+    "cost_note": "illustrative one-way transaction-cost scenarios applied separately to buys and sells; not estimates of actual fees; 25 bps central",
+    "benchmark": "equal-weight eligible active funds; Mkt-RF plus RF is a gross market research proxy, not investable. An independently sourced net passive benchmark is required for an investable passive comparison.",
+    "execution": "next available NAV after formation; monthly return alignment is a proxy until execution timing and restrictions are verified"
+  },
+  "inference": {
+    "unit": "monthly portfolio return or paired monthly difference",
+    "method": "overlapping 12-calendar-month moving-block bootstrap, blocks only within contiguous observed runs",
+    "draws": 10000,
+    "seed": 5253,
+    "confidence": "95% percentile interval",
+    "p_value": "one-sided null-centered bootstrap on monthly means with plus-one adjustment",
+    "short_series": "if no contiguous 12-month block exists, do not report bootstrap inference",
+    "selection_bias": "report missing month counts and concentration; inference conditional on observed months"
+  },
+  "freeze_conditions": [
+    "No numeric outcome performance has been evaluated for a ranking or portfolio.",
+    "Reconcile lagged and retrospective features and missing targets before launching evaluation.",
+    "Obtain or label access restrictions and passive benchmark limitations.",
+    "If settings or data hashes must change, register a new protocol version with a dated rationale before outcome evaluation."
+  ]
+}

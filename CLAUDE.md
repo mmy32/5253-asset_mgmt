@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Project: estimate true breadth N (effective number of independent bets) and evaluate whether breadth holds up under market stress.
+Project: test fund-level predictability using an availability-lagged chronological backtest; strict historical-vintage point-in-time validation is a separate extension.
 
 Inherits the global behavioral rules in `~/.claude/CLAUDE.md` (think before coding, simplicity first, surgical changes, goal-driven execution).
 

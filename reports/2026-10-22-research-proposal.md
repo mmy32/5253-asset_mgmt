@@ -1,13 +1,13 @@
 # Turning "Machine-Learning the Skill of Mutual Fund Managers" into a Point-in-Time Predictor: Research Proposal
 
 Date: 2026-10-22
-Status: draft.
+Status: original research proposal; operational scope and hypotheses updated 2026-11-12. The existing PDF remains the original draft. See `reports/2026-11-12-research-protocol-v1.md` and `TODO.md` for the narrower fund-level protocol.
 
 ## 1. Research Objectives
 
-Kaniel, Lin, Pelger and Van Nieuwerburgh (2022) show that a neural network can rank active U.S. equity mutual funds by next-month abnormal return. Their evaluation is not a real-time forecast, because the model trains on randomly drawn months, including months after the ones it predicts. This project tests whether the result survives when the model uses only information available at the time of the forecast.
+Kaniel, Lin, Pelger and Van Nieuwerburgh (2022) show that a neural network can rank active U.S. equity mutual funds by next-month abnormal return. Their random-date evaluation is not a real-time forecast because training can include months after a test month. This project examines whether a reduced fund-level signal survives chronological training and documented information-availability assumptions.
 
-The objective is to turn the paper's result into a predictor that uses point-in-time (PIT) data.
+The current primary question is whether fund-flow and momentum predictability survives chronological training and conservative information-availability assumptions, and whether the long-only result adds value after fees and costs. The supplied histories are revised, so the baseline is an availability-lagged chronological backtest. Strict historical-vintage PIT validation is a separate extension if suitable data become available.
 
 ## 2. Background of the Paper
 
@@ -48,19 +48,19 @@ The objective is to turn the paper's result into a predictor that uses point-in-
 |---|---|
 | Fund data | CRSP Mutual Fund database via WRDS: returns, TNA, expense ratio, turnover, objective code, share-class fields. Aggregate share classes to fund level as in the paper |
 | Factors | Carhart four factors from Ken French's data library |
-| Sentiment | Baker-Wurgler index as first released, or a version rebuilt each month using only data to date. Test a one-month and a longer lag |
-| Sample | 1980-01 to 2019-01 for comparison with the paper, then extended to the latest available data as a true holdout |
+| Sentiment | Excluded from the primary flow-and-momentum experiment. The revised March 2026 vintage is a labeled extension; strict PIT sentiment requires appropriate first-release vintages. |
+| Sample | Fund attributes start in 1999. The draft evaluation reserves formation months 2019-02 to 2025-10 and requires labels to be available by 2025-12-31. The paper's earlier sample cannot be reproduced from these attributes. |
 | Storage | Raw pulls in `data/raw/` (immutable), cleaned panels in `data/interim/`, predictions and portfolio returns in `data/processed/`. `data/` is gitignored |
 
 Data hygiene rules: each record carries an availability date, and the feature builder refuses to use a record before that date; funds that die are kept; no outcome-based sample filter (the paper requires a return observed at t, which drops funds that die in month t).
 
 ## 4. Hypotheses
 
-**H1 (main).** A model that uses only PIT inputs and trains on an expanding, chronological window still ranks funds: the top-minus-bottom decile spread in next-month abnormal return is positive and statistically significant out of sample.
+**H1 (main).** Under the primary chronological specification and its stated availability assumptions, the average top-minus-bottom next-month abnormal-return spread is positive. The one-sided null is that the mean spread is nonpositive.
 
-**H0.** The PIT spread is zero, so the paper's result depends on look-ahead in its design.
+**H2.** On matched evaluation observations, the retrospective random-date benchmark has a larger spread than the chronological model using the same retrospective feature timing. Compare their paired monthly differences and training-set sizes; the difference is not a pure measurement of look-ahead bias.
 
-**H2.** The PIT spread is smaller than the paper's. We measure the reduction by rerunning the paper's design and the PIT design on the same data.
+**Economic-value question.** Does the selected long-only portfolio outperform suitable alternatives after fees and supportable implementation costs? A weak or insignificant result does not establish that the paper's finding depended on look-ahead. A positive spread alone does not establish persistent manager skill.
 
 **Known pitfalls the design must address:**
 - *Look-ahead in tuning.* Choose hyperparameters using only data that precedes each test period.
@@ -68,17 +68,16 @@ Data hygiene rules: each record carries an availability date, and the feature bu
 - *Stale or restated data.* CRSP and WRDS revise their data, and funds can report TNA with a lag. Flow inherits that noise.
 - *Multiple comparisons.* Record and report the number of specifications tried.
 
-## 5. Research Plan
+## 5. Current research plan
 
-| Step | Task | Verification |
+The initial audit and a lagged fund panel are implemented. The remaining work is ordered below; the registered research protocol and `TODO.md` contain the detailed assumptions and review gates.
+
+| Milestone | Task | Verification |
 |---|---|---|
-| 1 | Build `data_loader` and `data_processing` for the CRSP fund panel; aggregate share classes and compute flow, fund momentum and abnormal returns | Unit tests on shape and dates; reproduce the paper's summary statistics (mean abnormal return about −0.03% per month, standard deviation about 2.00%) |
-| 2 | Add an availability-date field to every input and a guard that rejects any feature dated after the forecast date | Test that shifting a feature's date forward changes the output |
-| 3 | Replicate the paper's design (random folds) on the same sample as a benchmark | Decile spread of the same order as the reported +72% / −119% |
-| 4 | Build the PIT design: expanding-window chronological training, tuning on prior data only, point-in-time sentiment | Chronological split asserted in a test; no training row dated after any test row |
-| 5 | Compare the two designs on identical data: spread, Sharpe ratio, decile monotonicity | Table of paper design versus PIT design |
-| 6 | Repeat with feature subsets (all fund-level variables plus sentiment, flow plus momentum plus sentiment) | Table by information set |
-| 7 | Evaluate the long-only top decile net of fees, with realistic holding periods | Net alpha with confidence intervals |
-| 8 | Inference: block bootstrap on the monthly spread series | Confidence intervals and p-values for H1 |
-| 9 | Robustness: sentiment lag, alternative factor model (the paper uses eight factors as a check), pre- and post-2008 subsamples, holdout beyond 2019 | Sign and rough size of the effect stable, or reasons documented |
-| 10 | Write up in `reports/`, citing source notes in `research/` | Reviewed by the technical-reviewer agent |
+| 1 | Freeze the flow-and-momentum, no-sentiment protocol and the staged random-fold, chronological and lagged comparisons | Record dates, hypotheses, target, tuning, investor assumptions, inference settings and seeds before examining evaluation outcomes. |
+| 2 | Reconcile both sample screens and validate one canonical panel | Reproduce or explain attrition, report class-group sensitivity, and account for missing targets by year without selecting funds on future outcomes. |
+| 3 | Build an end-to-end chronological baseline | Produce monthly rankings, equal-weighted deciles and outcome coverage using prior-only training. |
+| 4 | Run matched comparisons and evaluate long-only net performance | Report paired monthly differences, training sizes, full-universe and matched coverage, benchmarks, uncertainty and implementation limitations. |
+| 5 | Add broader features, neural network and sentiment extensions; write the report | Compare the neural network with explicit linear sentiment interactions, label revised data, log specifications and report confidence intervals. |
+
+The primary experiment is an availability-lagged chronological backtest, not proof of strict PIT reconstruction. The research spread and the long-only economic evaluation answer different questions. The D5 holdings extract is incomplete and is not used under the current scope.

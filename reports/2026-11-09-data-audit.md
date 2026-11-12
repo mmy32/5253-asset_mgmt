@@ -19,4 +19,4 @@ Duplicate-key counts in the streaming inventory use 64-bit fingerprints. Hash co
 
 The command returns a nonzero exit status for this run because D5 is malformed. It still audits the other sources and writes the inventory. D5's valid-looking rows and date range should not be treated as a complete holdings sample. D1b's limited start date prevents full replication of the proposal's 1980–2019 sample with these attributes.
 
-Next milestone: define and construct the fund universe and fund-month panel, with explicit availability assumptions and coverage reporting. Do not use D5 until its export is repaired or reconciled.
+At the time of this audit, the next milestone was to construct the fund panel. An initial panel was subsequently built; see `reports/2026-11-09-fund-panel.md`. D5 remains blocked and outside the current scope.

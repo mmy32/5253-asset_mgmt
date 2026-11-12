@@ -64,7 +64,7 @@ Split into sub-pulls by WRDS table. Both are downloaded. D1b starts 1999-03, so 
   - **Codes in numeric columns:** `crsp_fundno` has leading zeros, so read it as text. `mret` holds the letter `R` in 94,191 rows and is blank in 255,841 (350,032 unusable in total, 3.4%). `mtna` holds `T` in 166,087 rows and is blank in 400,161. `mnav` holds `N` in 12,984 rows and is blank in 264,555. Treat these codes as missing. I have not looked up what each letter means in the CRSP documentation.
   - **Outliers:** `mret` ranges from −1.0 to 12,012.4, and 244 rows exceed 1. The paper removes only 11 fund-months with a raw return above 1, so this sample has many more; check whether these are data errors and what the paper's cleaning code would do with them.
   - **Coverage:** Coverage varies by field and period; CRSP revises history. TNA can be reported with a lag, which adds noise to flow.
-  - **Share classes:** The file is at share-class level (`crsp_fundno`), so it needs aggregating to fund level using `crsp_cl_grp` from D1b. Only 77.4% of D1b rows have `crsp_cl_grp` (26.4% before 1999).
+  - **Share classes:** The file is at share-class level (`crsp_fundno`), so it needs aggregating to fund level using `crsp_cl_grp` from D1b. The documented D1b pull starts in 1999-03; `crsp_cl_grp` is present in 83.6% of its rows. Missing mappings require a sensitivity analysis.
   - **Net returns:** `mret` is net of fees. The paper uses gross returns, so expense ratios must be added back (see D1b).
 - **Used by:** steps 1 to 9
 
@@ -84,7 +84,7 @@ Split into sub-pulls by WRDS table. Both are downloaded. D1b starts 1999-03, so 
 - **Field coverage (non-missing rows):** `crsp_obj_cd` 96.9%, `mgmt_cd` 88.1%, `crsp_cl_grp` 83.6%, `first_offer_dt` 99.2%, `exp_ratio` 81.4%, `turn_ratio` 75.8%, `crsp_portno` 77.9%, `per_com` 84.4%, `fund_name` 99.3%.
 - **Other profile:** `crsp_obj_cd` has 67 distinct codes and changes over time for 14,145 funds; `mgmt_cd` changes for 32,210 funds; `crsp_cl_grp` never changes within a fund. `exp_ratio` is an annual fraction (median 0.0099; mean 0.0108, or about 0.09% a month versus the paper's 0.097%), range −0.006 to 1.46, so there are outliers. `turn_ratio` median 0.49, maximum 1,188.7.
 - **Known issues:**
-  - **Look-ahead confirmed:** `dead_flag`, `end_dt`, `delist_cd` and `first_offer_dt` never change within a fund, so each describes the fund as of the pull date. Among rows with `dead_flag = Y`, 98.9% are dated before `end_dt`. Do not use these as predictors; they are fine for sample construction.
+  - **Look-ahead confirmed:** `dead_flag`, `end_dt`, `delist_cd` and `first_offer_dt` never change within a fund, so each describes the fund as of the pull date. Among rows with `dead_flag = Y`, 98.9% are dated before `end_dt`. Do not use these pull-date fields as predictors or to decide historical eligibility; retain dead funds and use only appropriately dated information for sample construction.
   - **Holdings link:** `crsp_portno` is empty for all of 1999 to 2002, 50.7% filled in 2005, 68.3% in 2008, 92.8% in 2011 and about 93% to 97% from 2014.
   - **Unused columns:** many columns (bond composition, maturity, 52-week NAV) are probably not needed for U.S. equity funds.
 - **Used by:** steps 1, 2 and 9
@@ -120,7 +120,7 @@ Split into sub-pulls by WRDS table. Both are downloaded. D1b starts 1999-03, so 
 - **Raw file(s):** `data/raw/D3_Baker_Wurgler_sentiment.xlsx`, 130 KB, SHA-256 `3580398aaba6b72ad988844416c7b0ac9caca24fd2ab1d9149a983ec63b9f7a2`.
 - **Availability-date rule:** TBD (test a one-month and a longer lag).
 - **Known issues:**
-  - **Look-ahead:** the index is built with full-sample principal components and revised in each yearly update, so the published history uses information from after each date. This file is the March 2026 vintage, not the first release. The input series are included so the index can be rebuilt with data to date.
+  - **Look-ahead:** the index is built with full-sample principal components and revised in each yearly update, so the published history uses information from after each date. This file is the March 2026 vintage, not the first release. The input series are included, but rebuilding with revised inputs would not by itself recover first-release vintages. The current primary experiment excludes sentiment and the revised index is reserved for a labeled extension.
   - **Missing inputs:** some input columns are blank in early rows, and the README notes that CPI is missing for 2025-10 because of the government shutdown.
   - **Excel format:** needs `openpyxl` or a CSV export to read in pandas; it is not installed in the Python 3.13 interpreter used so far.
   - **2026-11-09 audit:** 816 rows. `SENT` is missing in 90 rows, `SENT_ORTH` in 91 and CPI in one; other input missingness is in the machine-readable inventory.
@@ -178,7 +178,7 @@ Split into sub-pulls by WRDS table. Both are downloaded. D1b starts 1999-03, so 
 - **Raw file(s):** `data/raw/D7_Compustat_monthly_security.csv`, 2.4 GB, 3,785,886 data rows, 28,574 `gvkey`, 29,172 `lpermno`, 28,486 `lpermco`. No duplicate (`gvkey`, `iid`, `datadate`) or (`lpermno`, `datadate`) pairs. SHA-256 `06c9018d00f8db05ba94475e81052c54ce3f289a17fb4b59f8f63bd0694db2a0`.
 - **Row counts by year:** 26,795 (1976), 55,794 (1981), 72,063 (1986), 104,549 (1996), 78,246 (2006), 67,322 (2016), 74,560 (2025), 60,971 (2026).
 - **Audit, 2026-11-09:** 404 records have `datadate` later than the documented 2026-11-06 file timestamp. All 3,785,886 records fall within their recorded link windows, treating `E` as open-ended for this diagnostic; vendor semantics still require confirmation.
-- **Link table profile:** `linktype` LC 1,929,857 rows and LU 1,856,029; `linkprim` P 3,209,521, C 536,936, J 33,135, N 6,294. Every row has `linkdt` and `linkenddt` filled. The 2026-11-09 audit found no observations outside their recorded link window, treating `E` as open-ended; confirm vendor semantics.
+- **Link table profile:** `linktype` LC 1,929,857 rows and LU 1,856,029; `linkprim` P 3,209,521, C 536,936, J 33,135, N 6,294. Every row has `linkdt` and `linkenddt` filled; confirm vendor semantics for open-ended links.
 - **Field coverage (non-missing):** `prccm` 99.8%, `trt1m` 99.3%, `cshtrm` 99.4%, `ajexm` 100%, `cshom` 57.3%, `cshoq` 29.1%, `dvpsxm` 16.6%, `navm` 5.1%, `gsector` 90.9%, `naics` 97.4%, `cik` 94.5%. Entirely empty: `csfsm`, `add3`, `add4`.
 - **Availability-date rule:** TBD. Market fields are as of month-end; delisting and link-window information is look-ahead if used before it was known.
 - **Known issues:**
