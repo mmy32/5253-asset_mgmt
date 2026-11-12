@@ -86,6 +86,7 @@ Split into sub-pulls by WRDS table. Both are downloaded. D1b starts 1999-03, so 
 - **Known issues:**
   - **Look-ahead confirmed:** `dead_flag`, `end_dt`, `delist_cd` and `first_offer_dt` never change within a fund, so each describes the fund as of the pull date. Among rows with `dead_flag = Y`, 98.9% are dated before `end_dt`. Do not use these pull-date fields as predictors or to decide historical eligibility; retain dead funds and use only appropriately dated information for sample construction.
   - **Holdings link:** `crsp_portno` is empty for all of 1999 to 2002, 50.7% filled in 2005, 68.3% in 2008, 92.8% in 2011 and about 93% to 97% from 2014.
+  - **Group mapping sensitivity:** in the retrospectively selected 1999-03 to 2025-12 class-months, 356,434 have no group on the latest as-of summary. An earlier nonblank as-of value exists for 414 of these; another 28 across five classes have a group first observed after the source return date. For 23 of those, the first observation is also after formation; all 28 fall after the formation cutoff under the registered 90-day lag. Do not use mappings before their assumed availability date. See `reports/2026-11-12-sample-reconciliation.md`.
   - **Unused columns:** many columns (bond composition, maturity, 52-week NAV) are probably not needed for U.S. equity funds.
 - **Used by:** steps 1, 2 and 9
 

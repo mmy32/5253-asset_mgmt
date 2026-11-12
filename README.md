@@ -32,6 +32,14 @@ python -m src.data_processing.fund_panel --raw-dir /path/to/raw
 
 The command reads D1a, D1b and the two D2 factor CSVs; it does not read D5. It writes an ignored `data/interim/fund_panel/` directory containing the fund panel and class lineage in Parquet, the DuckDB database, coverage tables and the configuration used. It refuses to overwrite an existing database: choose a new location with `--output-dir` for another run. See [the fund-panel report](reports/2026-11-09-fund-panel.md) for field definitions, availability assumptions, coverage and limitations. Configuration is in `configs/fund_panel.json`.
 
+## Reconcile sample definitions
+
+```bash
+python -m src.data_processing.sample_reconciliation --output-dir data/interim/reconciliation-new
+```
+
+This reads the registered panel database without modifying it, verifies its hash and writes retrospective attrition, grouping sensitivities and annual screen overlap. The full-file mapping is a look-ahead diagnostic, not a model input. See the [reconciliation report](reports/2026-11-12-sample-reconciliation.md).
+
 ## Check protocol coverage
 
 ```bash
