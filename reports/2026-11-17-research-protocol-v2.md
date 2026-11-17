@@ -35,6 +35,30 @@ These were decided together and folded into v2 rather than a v3: no v2 panel had
 
 Set aside: investability (retail-only classes, open-to-investors flags). It is not a concern for this study and no rule is added.
 
+## Missing-outcome estimand, decided 2026-11-17
+
+Folded into v2, not a v3. It runs on the v2 panel. The question is unchanged from v1 H1: does the top decile beat the bottom decile? What changes is how missing outcomes are treated, because v1 could not estimate the spread (no month had both legs complete; see the [baseline](2026-11-16-chronological-baseline.md)). v1 results stay on record. v1 outcomes were examined before this decision, so the registration is not blind. No v2 outcome has been examined.
+
+**1. Coverage threshold (primary estimate).** A leg counts as observed in a month if at least 90% of its weight has an outcome. Weights are rescaled over the observed funds within that leg. A month enters the spread only if both legs pass. Months that fail are listed and counted, not dropped silently. The 90% value was chosen from the coverage discussion, not from returns.
+
+**2. Bounds (alongside the primary estimate).** For every month, fill each missing weight with a low and a high value to get a range for the spread:
+
+- Low value: the 5th percentile of observed outcomes that month. High value: the 95th. Both come from the same month's eligible funds, so no future information is used. The 5th and 95th percentiles are a proposed choice, to be confirmed before freezing.
+- Lower bound on the spread = top leg at low value minus bottom leg at high value. Upper bound = top leg at high value minus bottom leg at low value.
+- If the range excludes zero, the sign is robust to the missing funds. If it includes zero, report the spread as not identified.
+
+**3. Two targets, reported separately and never combined.**
+
+| | Abnormal return | Net-return proxy |
+|---|---|---|
+| Definition | (gross return − RF) − beta × factors, 36-month betas, as in v1 | Reported class return, net of fees |
+| Needs expense ratio and 30 prior months | Yes | No |
+| Question | Skill after factor adjustment (v1 H1) | Investor payoff after fees |
+
+Each target gets its own threshold estimate and its own bounds. Which one is primary is not yet decided; v1 H1 stays registered on abnormal return, and the net-return proxy is added as a second hypothesis.
+
+**Not run yet.** The v2 sensitivities in the table above come first, then the mechanics checks (timing, weights), then freezing the plan and input hashes. The new estimand is not run until then.
+
 ## Open design points
 
 1. **Untestable funds.** About 18% of ungrouped funds have no portfolio number and are treated as single-class under the rule.
