@@ -21,7 +21,7 @@ The plan is written up in `reports/2026-11-12-research-protocol-v1.md`, with one
 - [X] Choose the dataset and the source for the market-factor data. Confirm both factor sources agree, and test for timing errors, double-counted returns and later edits to the source files.
 - [X] Record the test window: 81 months, with 82,539 fund-months that have all the inputs we need. Every month has at least 20 usable funds. Some outcomes are missing (2,268 fund-months have no future outcome, and 1,441 have no net return).
 
-**Still to review before we evaluate anything.** If any of these makes us change the plan, save it as a new version first.
+**Still to review before we evaluate anything.** If any of these makes us change the plan, save it as a new version first. The findings are packaged in the [point-in-time response](reports/2026-11-17-pit-challenge-response.md).
 
 - [X] **Data revisions:** Reviewed what each source publicly says about release dates and corrections. No source gives a publication date per observation, and the CRSP notes confirm repeated corrections to returns, TNA, fees and class groups, with no sizes given. See the [summary](reports/2026-11-17-crsp-release-notes-summary.md) and [full review](reports/2026-11-17-data-publication-and-revision-review.md). The size of the changes is still unmeasured.
 - [X] **Missing group labels:** Some share classes have no group assigned. About 74% of ungrouped funds look like genuine single-class funds. Decision made: count them as their own funds (protocol v2). The rule is built and tested; the rebuild is listed in section 3.5.
