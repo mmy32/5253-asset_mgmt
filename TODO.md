@@ -24,11 +24,23 @@ Stop after each major milestone for review.
 See [Milestone 3 results](reports/2026-11-16-chronological-baseline.md): both models forecast all 81 months, but neither has a fully observed top-minus-bottom abnormal-return month. Do not relax missingness rules to manufacture a spread. Matched experiments and investor evaluation below belong to Milestone 4.
 
 - [X] Implement a momentum ranking and a regularized linear model using flow and momentum. Produce month-end rankings, equal-weighted research deciles, constituent weights and realized outcome coverage, with chronological refits and prior-only tuning.
+
+## 3.5 Resolve missing-outcome coverage — next
+
+- [X] Attribute missing weight in selected extreme-decile portfolios by month and model, including overlaps and formation-time characteristics. See [selected coverage](reports/2026-11-16-selected-coverage.md). No new performance was computed.
+- [X] Trace missing outcomes in the available export: absent future classes are terminal observations; 234 of 239 unique missing-expense cases have a historical expense whose assumed availability is too late. See [source recovery review](reports/2026-11-16-source-recovery-review.md). No outcomes have been recovered; source acquisition and a possible delayed-label protocol remain pending.
+- [ ] Choose and document a follow-up estimand and missingness treatment, including any observed-constituent diagnostic, explicit renormalization, coverage thresholds, assumptions and selection bias. Retain the v1 unestimable result.
+- [ ] Version and freeze any new protocol and input hashes before evaluating new outcomes; document that v1 outcomes have already been examined. Test timing and weights, report paired-month coverage, and apply inference only when its requirements are met. If coverage cannot be recovered defensibly, report the unanswered question.
+
+**Review gate:** stop before evaluating the follow-up; review the proposed method and its limitations.
+
+## 4. Matched experiments and economic evaluation
+
 - [ ] Run matched experiments A–C, preserving fixed feature definitions, target and evaluation dates where feasible. Report paired monthly A–B and B–C differences, training-set sizes, each design's complete formation universe and the ex-post matched outcome sample.
 - [ ] Evaluate the long-only portfolio separately using observed net share-class returns. Working investor: U.S. retail. Specify one-class-per-fund selection, open status, access, minimums, turnover, loads and redemption costs. If those cannot be established, label the result a net-return proxy rather than an investable portfolio.
 - [ ] Compare long-only results with a suitable passive alternative and an equal-weighted eligible active-fund portfolio. Report missing realized weights, risk-adjusted returns, paired monthly uncertainty and effect sizes; do not subtract annual expenses twice.
 
-## 4. Extensions and reporting
+## 5. Extensions and reporting
 
 - [ ] Add broader available fund/family features and a paper-inspired 64-unit ReLU network after the baseline works. Compare the network with a linear sentiment-interaction model before attributing gains to nonlinear complexity. Prediction-strength weighting is secondary and requires a prespecified formula and tie/zero-weight rules.
 - [ ] Run a limited, prespecified set of lag, mapping and return-cutoff sensitivities. Record WRDS release vintages if available. Optional: obtain CFNAI (D4) and the additional eight-factor inputs (D8), document vintages, then run those checks. Strict PIT is a separate extension if appropriate historical data become available.
@@ -36,7 +48,7 @@ See [Milestone 3 results](reports/2026-11-16-chronological-baseline.md): both mo
 
 ## Done and current limitations
 
-- [X] Research proposal and project scaffold created; latest GitHub history fetched and merged locally. A previous push was rejected for lack of write permission; verify access before attempting another push.
+- [X] Research proposal and project scaffold created; latest GitHub history fetched and merged locally. Milestones 2 and 3 were pushed in commit `6912ad0`.
 - [X] Source audit and initial lagged fund-only panel implemented with tests. Reports: `reports/2026-11-09-data-audit.md` and `reports/2026-11-09-fund-panel.md`. The raw observation overlap is 1999-03 through 2025-12; the lagged panel begins in 1999-06.
 - [X] D1a/D1b/D2/D3 loaders, a retrospective objective/name screen and the common-window calculation exist. The reported retrospective screen has 2,739,850 share-class months through 2025-12 after removing 16 share-class returns above 100%; this is a diagnostic, not the lagged fund-panel universe.
 - [X] D5 is incomplete and blocked; D5, D6 and D7 are not needed for Option A. WRDS release vintages remain unrecorded. The chronological baseline was run; its spread is unestimable under the registered missingness rule.
