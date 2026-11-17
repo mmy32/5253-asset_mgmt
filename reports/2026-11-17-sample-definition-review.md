@@ -25,7 +25,7 @@ The panel excludes a class if its name matches `international|global|foreign|eme
 - 3,623 of 76,080 classes in D1a (4.8%) have no row in D1b, so they have no objective code and cannot enter the sample.
 - What this cannot tell us: whether CRSP added funds retroactively after they existed (a known "history backfill" issue) or when a fund first appeared in a database. No source gives that date (see the [revision review](2026-11-17-data-publication-and-revision-review.md)).
 
-## 3. Could an investor really buy these?
+## 3. Could an investor really buy these? (set aside by decision, 2026-11-17: not a concern for this study; kept for the record)
 
 Latest summary row per sample class:
 
