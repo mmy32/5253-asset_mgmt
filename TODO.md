@@ -6,7 +6,7 @@
 
 **Plan documents:** [v1](reports/2026-11-12-research-protocol-v1.md) is the original plan. [v2](reports/2026-11-17-research-protocol-v2.md) changes the sample rules and adds the missing-outcome method below. Pause for review after each major milestone.
 
-**Where we are (2026-11-17):** The data and sample are built (v2 panel). The first history-replay test could not produce a result because outcomes are missing. We have decided how to handle that (Part B). Next: finish the sample checks, freeze the plan, run it. The neural network from the paper is not built yet (Part C3).
+**Where we are (2026-11-17):** The v2 panel is built, the missing-outcome method is decided, frozen and checked, and coverage clears the 90% rule in 80 to 81 of 81 months. The spread is run and awaits your review (Part C1): about +22 bps a month on abnormal return, about +2 bps (no evidence) on net return. The neural network from the paper is not built yet (Part C3).
 
 ---
 
@@ -80,14 +80,14 @@ Findings are packaged in the [point-in-time response](reports/2026-11-17-pit-cha
 
 ### C1. Finish the missing-outcome work (comes first)
 
-- [ ] **Run the v2 sample sensitivities:** Rebuild with "global" added to the name words, with no size floor, and with flagged funds dropped. Compare counts. This comes before freezing.
-- [ ] **Write down the risks:** State the assumptions and how gaps could bias the answer (vanishing funds, late-arriving expense data, the 90% cutoff, the percentile bounds).
-- [ ] **Freeze before testing:** Save the plan and exact input file fingerprints before looking at any new results. Say plainly that v1 results were already seen.
-- [ ] **Check the mechanics:** Test timing and weights (rescaling, the 90% rule, bounds) before running anything.
-- [ ] **Report the overlap:** Show how many months have complete outcomes for both top and bottom groups under the 90% rule.
-- [ ] **Run the spread:** Both targets, threshold estimate plus bounds. Run uncertainty analysis only if its requirements are met. If coverage cannot be repaired credibly, say the question is unanswered.
+- [X] **Run the v2 sample sensitivities:** Done. Adding "global" removes 51 funds (0.7%). Dropping the 5 million floor adds 12% more funds and raises the missing share from 2.26% to 2.42%. Dropping flagged funds removes about 5% of fund-months and leaves the missing share unchanged. No variant fixes the coverage problem: every month still has missing outcomes. See the [sensitivity report](reports/2026-11-17-v2-sensitivities.md).
+- [X] **Write down the risks:** Done, 14 risks with direction, handling and what is left. Main points: funds that vanish are weaker, so observed-only results are probably too high; the 5th/95th fill values are plausible, not guaranteed, extremes; the model trains only on funds with outcomes, which the bounds do not fix. See the [risks report](reports/2026-11-17-missing-outcome-risks.md).
+- [X] **Freeze before testing:** Done. Settings, code hashes, config hashes, panel hashes and input hashes are saved in `configs/research_protocol_v2.json` under `freeze`. The note says v1 results were already seen, so this is not blind.
+- [X] **Check the mechanics:** Done. 60 tests pass. The run stops on error if decile weights do not sum to one, a month lacks ten deciles, or a training label is dated after its decision. All passed on the real v2 panel.
+- [X] **Report the overlap:** Done. With the 90% rule, 80 of 81 months pass for abnormal return (longest run 46) and 81 of 81 for net return. The one failing month, 2022-12, has the bottom decile at 89.66% observed. Mean coverage is 97% to 99% per decile. v1 had zero such months. See the [overlap report](reports/2026-11-17-v2-overlap.md).
+- [X] **Run the spread:** Done, after you confirmed the 5th/95th fills and both targets. Abnormal return: top beats bottom by about 22 bps a month (95% interval −0.2 to +36 bps, one-sided p 0.005), and the bounds on the mean (7 to 30 bps) stay above zero. Net return: about +2 bps, interval −31 to +29 bps, p 0.44, bounds include zero, so no evidence of an after-fee gain. Ridge and momentum rank funds almost identically (rank correlation 0.9999), so flow adds nothing linearly. See the [results](reports/2026-11-17-v2-spread-results.md).
 
-**Pause for review:** Stop before running. Review the method and its weaknesses first.
+**Pause for review:** The spread is run. Review the [results](reports/2026-11-17-v2-spread-results.md), especially the cautions on the identical ridge and momentum rankings and the off-centre bootstrap interval, before starting C2.
 
 ### C2. Compare setups and check real-world profit
 
@@ -103,7 +103,7 @@ The paper ([Kaniel, Lin, Pelger, Van Nieuwerburgh](research/MACHINE-LEARNING%20T
 
 | Piece | Paper | We have now | What is left |
 |---|---|---|---|
-| Model | One hidden layer, 64 ReLU units | Ridge regression only | Build the network |
+| Model | One hidden layer, 64 ReLU units | Ridge regression only. It ranks funds almost exactly like plain momentum, so flow adds nothing linearly | Build the network. Test whether nonlinearity or extra inputs make flow matter |
 | Tuning | 144 candidate settings: 1 to 3 layers, 32 or 64 first-layer units, dropout, learning rate, two regularizers. Picked on a validation split | Ridge strength tuned on past data only | Build the tuning grid, with validation only on earlier months |
 | Stability | Average of 8 fits from different random starts | None | Train 8 fits and average them. Fix seeds in the plan |
 | Fund inputs | 3 momentum + 5 fund characteristics (incl. flow) + 5 family characteristics | 2 inputs: flow and 12-2 abnormal-return momentum | Build the remaining fund and family inputs from the fund summary data. Check which exist (expense ratio, turnover, age, size, family size) |

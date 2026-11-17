@@ -2,7 +2,7 @@
   "protocol_id": "fund-flow-momentum-v2",
   "supersedes": "fund-flow-momentum-v1",
   "registered_date": "2026-11-17",
-  "status": "panel_rebuilt_pending_review",
+  "status": "frozen_spread_run_2026-11-17",
   "change_policy": "Every v1 setting not listed under changes still applies. Any further change requires a new version and a dated explanation before evaluation.",
   "rationale": "CRSP removed class-group ids for funds with a single share class (April 2024 release notes). A test on D1b found that about 74% of funds with no group look like single-class funds, so v1 excluded real funds. See reports/2026-11-17-crsp-release-notes-summary.md.",
   "outcome_independence": "The decision rests on release notes and on D1b group and portfolio-number fields. No return, outcome or portfolio result was used. Note that v1 baseline outcomes had already been examined (reports/2026-11-16-chronological-baseline.md) before this change.",
@@ -48,7 +48,7 @@
     "Implement the rules in the panel with tests. Done 2026-11-17.",
     "Rebuild the panel and record code, config and panel hashes. Done 2026-11-17 (see provenance).",
     "Rerun the coverage and missing-target counts and compare them with v1. Done 2026-11-17.",
-    "Report v1 and v2 side by side. Done for the main comparison; the sensitivities listed under changes are not yet run."
+    "Report v1 and v2 side by side. Done. Sensitivities run 2026-11-17 (reports/2026-11-17-v2-sensitivities.md)."
   ],
   "unchanged": "All other v1 settings: dates, features, availability lags, target, model, portfolios, costs, inference and freeze conditions.",
   "decided_2026-11-17": "Name rule, size floor, treatment of the shared-portfolio-number funds and of vanishing funds were decided together and folded into v2 (not a v3), because no v2 panel had been built and no v2 result seen. v1 outcomes were examined earlier, so the registration is not blind.",
@@ -78,5 +78,65 @@
       "class_lineage_sha256": "0b13ca50fcce2f59013fcb312c4462510fcc3e37d11db32932bd7598e1fb5a52"
     },
     "comparison_report": "reports/2026-11-17-v1-v2-panel-comparison.md"
+  },
+  "missing_outcome_estimand": {
+    "decided": "2026-11-17",
+    "question": "Same as v1 H1: does the top predicted decile beat the bottom predicted decile?",
+    "panel": "v2",
+    "coverage_threshold": 0.9,
+    "threshold_rule": "A decile is observed in a month if at least 90% of its weight has an outcome (inclusive). Weights are rescaled over observed funds within the decile. A month enters the spread only if the top and bottom deciles both pass. Failing months are counted and listed.",
+    "bounds_percentiles": [
+      5,
+      95
+    ],
+    "bounds_rule": "Fill each missing weight with the 5th (low) and 95th (high) percentile of that month's observed outcomes across all eligible funds. Spread lower bound = top at low minus bottom at high. Upper bound = top at high minus bottom at low. Computed for every month.",
+    "targets": {
+      "abnormal": "next_month_abnormal_return",
+      "net_proxy": "target_net_return"
+    },
+    "targets_rule": "Each target gets its own threshold estimate and bounds. Never combined.",
+    "primary_target": "Both targets reported separately; neither designated primary (confirmed 2026-11-17). v1 H1 stays registered on abnormal return; net return is H1b.",
+    "models": [
+      "ridge_C",
+      "momentum"
+    ],
+    "enough_months_rule": "Bootstrap inference only if a run of 12 contiguous passing months exists (v1 inference rules unchanged). Otherwise report monthly values and bounds only.",
+    "unanswered_rule": "If fewer than 12 contiguous months pass and the bound range includes zero in most months, report the question as unanswered.",
+    "risks_report": "reports/2026-11-17-missing-outcome-risks.md",
+    "sensitivities_report": "reports/2026-11-17-v2-sensitivities.md",
+    "overlap_report": "reports/2026-11-17-v2-overlap.md",
+    "bounds_percentiles_confirmed": "2026-11-17: 5th and 95th percentiles confirmed by the user."
+  },
+  "freeze": {
+    "frozen": "2026-11-17",
+    "statement": "Frozen before any v2 forecast, ranking or return was examined. v1 outcomes had been examined earlier, and some aggregate target moments were seen during diagnostics, so this registration is not blind. The overlap report trains the registered forecasts on v2 but writes only whether outcomes exist.",
+    "code_sha256": {
+      "src/models/missing_outcomes.py": "a64f581574bf23c5581c75c52e33818e5f3ffae9a76b315a55b5b7f85d1afbf8",
+      "src/models/overlap_report.py": "45a508a1354ce0820dd1aa6403c488c3bce9cff7eeb8bc92632895a395b92d44",
+      "src/models/baseline.py": "394c47799c67a8e1020df9a0c68cb2dcfb987174e85de5353bd7fc998d886e95",
+      "src/data_processing/fund_panel.py": "38ff46113fd4be6e740e9e2fd0c86c8cd5046b3cffdae3f806fb80d026fb7f47",
+      "scripts/run_v2_sensitivities.py": "cc25eeea93b002d7d30fba4117fca4a24ffca44669e1cc47afab0eecfc81fc8b",
+      "src/models/block_bootstrap.py": "017333a47583f3d0ac96b04db5fe113c96d48d9e147261e0cc2bebb8e3cf53d7",
+      "src/models/spread_report.py": "7e63bc68a4cd2fab54b776f7a33c0f9586ddd715964693a02547b39f2e9a0956"
+    },
+    "config_sha256": {
+      "configs/fund_panel_v2.json": "c733cefd3cee02a577a32e61909c463b9f93cf32998170e8ca951dcd792ea222",
+      "configs/fund_panel_v2_global.json": "f82cdc529bad2e37b40a1f4fdbf11adf37875862589fccd1bb113986fe017fac",
+      "configs/fund_panel_v2_nofloor.json": "754608a89467058ba17110cb82a291ccd325e3fc6afec5322de640a92807e283",
+      "configs/research_protocol_v1.json": "810b3d49cb2ae164658de38430f5f51a0432d360c5839e5e01e5c21ea387423e"
+    },
+    "panel_db_sha256": {
+      "v2": "a3d65f247007d212c13c39064f15fc1351e2322fbdf9d4006d005d02dd4d8092",
+      "v2_global": "3abbc826e486ff1597523f6255fb1bdc8ba885823d9792634bb5743e28ec1f53",
+      "v2_nofloor": "82ef3efe5a5c774981217c248d387b20683130e62aba64d06f1602c93c194aa3"
+    },
+    "inputs_sha256": {
+      "D1a": "2dd6772a0fa618ca473d9651ecde283c2f107012668832215acf74d17450d738",
+      "D1b": "0e2edbd6d60d309320005d45d928ab6c34216ec0a138bd1a771aa33478d32b60",
+      "D2_research": "a3894d74d553cab812eabbe706bdbf443c97eb20b24b05e3e5f3ce47e46b90bb",
+      "D2_momentum": "81ff7cab5517159daa5a66c83fd90d4076a0864be2d5fef179719c0f9049a8cb"
+    },
+    "refreshed": "2026-11-17: overlap_report.py gained check_mechanics before any run; hashes refreshed. Still no v2 forecast or return examined.",
+    "refreshed_2": "2026-11-17: added block_bootstrap.py and spread_report.py (v1 inference rules: 12-month overlapping blocks, 10,000 draws, seed 5253, 95% percentile interval, one-sided null-centred p-value). Frozen before the spread was run. The runner refuses to run if any frozen code file has changed."
   }
 }

@@ -57,7 +57,7 @@ Folded into v2, not a v3. It runs on the v2 panel. The question is unchanged fro
 
 Each target gets its own threshold estimate and its own bounds. Which one is primary is not yet decided; v1 H1 stays registered on abnormal return, and the net-return proxy is added as a second hypothesis.
 
-**Not run yet.** The v2 sensitivities in the table above come first, then the mechanics checks (timing, weights), then freezing the plan and input hashes. The new estimand is not run until then.
+**Status 2026-11-17.** The v2 sensitivities are run ([report](2026-11-17-v2-sensitivities.md)). The risks are written ([report](2026-11-17-missing-outcome-risks.md)). The plan and input hashes are frozen in `configs/research_protocol_v2.json` under `freeze`. The mechanics checks pass, and the overlap is reported ([report](2026-11-17-v2-overlap.md)): with the 90% rule, 80 of 81 months pass for abnormal return and 81 of 81 for net return. **The spread and bounds were run 2026-11-17** after the 5th/95th percentiles were confirmed and both targets were kept with neither designated primary ([results](2026-11-17-v2-spread-results.md)). Abnormal return: about +22 bps a month, bounds above zero, one-sided p 0.005. Net return: about +2 bps, bounds include zero, p 0.44. Ridge and momentum rank funds almost identically, so these are one result, not four.
 
 ## Open design points
 
