@@ -1,12 +1,12 @@
 # v2 spread results: does the top decile beat the bottom decile?
 
-Date: 2026-11-17. Run on the v2 panel under the frozen plan in the [v2 protocol](2026-11-17-research-protocol-v2.md). The runner refuses to start if any frozen code file or the panel hash has changed. Command: `python -m src.models.spread_report --database data/interim/panels/v2/fund_panel.duckdb --output-dir data/interim/spread_v2`. Outputs (local, not in Git): `spread_by_month.csv`, `spread_summary.csv`.
+Date: 2026-11-17. These figures are the original run at commit `833cb71`, on the v2 panel under the frozen [v2 protocol](2026-11-17-research-protocol-v2.md). The [review follow-up](v2-spread-review-follow-up.md) adds stricter protocol verification and a separate inference sensitivity. The sensitivity has not yet been run on the registered data.
 
 **The v1 finding stays on record:** under v1's rule (any missing fund blocks the month) the spread could not be estimated at all. These results come from the changed missing-outcome rule, and v1 outcomes had been looked at before it was chosen.
 
 ## Answer in one paragraph
 
-On the abnormal-return target, the top predicted decile beat the bottom by about 22 basis points a month, and that gap stays positive even when the missing funds are given the worst and best plausible outcomes. On the net-return target, the gap is about 2 basis points a month and cannot be told apart from zero. So the data support a positive factor-adjusted spread but give no evidence that an investor would have kept a gain after fees. The ridge model ranks funds almost exactly as plain momentum does, so this is a momentum result, not evidence that fund flow helps.
+On the abnormal-return target, the top predicted decile beat the bottom by about 22 basis points a month. The gap stays positive under the specified 5th/95th percentile fills for missing outcomes. On the net-return target, the gap is about 2 basis points a month and cannot be told apart from zero. The ridge model ranks funds almost exactly as plain momentum does, so there is no evidence here that adding fund flow improves the ranking.
 
 ## Results
 
@@ -35,8 +35,8 @@ Spreads are the mean monthly top-decile minus bottom-decile return, equal-weight
 
 ## What this does and does not say
 
-It says that, with the missing funds handled as registered, funds with strong past factor-adjusted returns went on to earn higher factor-adjusted returns than funds with weak ones, and the missing funds cannot plausibly overturn that sign. It does not say an investor could have profited. The net-return spread is indistinguishable from zero.
+The estimated abnormal-return spread is positive and survives the specified missing-outcome scenarios. Missing returns outside those scenarios could overturn the sign. The scenario range does not account for sampling uncertainty, and the original two-sided interval includes zero. The net-return spread is indistinguishable from zero.
 
 ## Next
 
-Section C2 of the [TODO](../TODO.md): compare setups A, B and C and test the long-only after-fee portfolio. The result in point 1 should shape the network step: the linear model adds nothing to momentum, so any gain from the network over ridge would come from nonlinearity or from added inputs, not from flow alone.
+Run the [inference sensitivity](v2-spread-review-follow-up.md) on the registered panel before Section C2 of the [TODO](../TODO.md).

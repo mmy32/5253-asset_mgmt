@@ -1,0 +1,8 @@
+{
+  "original_commit": "833cb71",
+  "v2_protocol_sha256": "cba7a09568ca02501f7f414b8ffb562cc0d025d59c0bbf25ee766db5261222b6",
+  "code_sha256": {
+    "src/models/spread_report.py": "b0513dacd69c02a90efe670012d6fc49721d1dc38bec101bd59ac7538f2e0cc7",
+    "src/models/calendar_inference.py": "816937ecfb9ef2620172bd1ffacdd41980fbf1c8bf11f1385097a5ca0d325ab2"
+  }
+}

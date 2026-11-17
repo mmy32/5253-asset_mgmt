@@ -65,14 +65,14 @@ Findings are packaged in the [point-in-time response](reports/2026-11-17-pit-cha
 **Same question as the paper and v1: does the top predicted decile beat the bottom predicted decile?** We keep it, but treat missing outcomes differently, because v1 could not estimate the spread at all. Decided 2026-11-17 and recorded in the [v2 protocol](reports/2026-11-17-research-protocol-v2.md). It runs on the v2 panel.
 
 1. **90% coverage rule (main estimate).** A group counts as observed in a month if at least 90% of its weight has an outcome. Rescale weights over the observed funds. A month counts only if both top and bottom pass. Failed months are listed, not silently dropped.
-2. **Best and worst case bounds (alongside).** Fill each missing outcome with the month's 5th percentile (worst) or 95th percentile (best) observed outcome. This gives a range for the spread. If the whole range is above zero, the answer holds however the missing funds did. If the range includes zero, we say the data cannot tell.
+2. **Missing-outcome sensitivity (alongside).** Use the month's observed 5th and 95th percentiles as low and high fills for missing outcomes. A range above zero means the sign survives those scenarios; more extreme missing outcomes could still reverse it. This range does not measure sampling uncertainty.
 3. **Two targets, reported separately, never combined:**
    - **Abnormal return** (the paper's target): return beyond what market, size, value and momentum exposure explain. Needs expense ratios and 30 months of history. Missing weight in the top group: about 2.15%.
    - **Net return** (what an investor kept after fees): needs neither. Missing weight in the top group: about 0.96%.
 
 **Why this design:** the missing funds are smaller and had weaker returns, so looking at observed funds only probably overstates results. The threshold gives one number. The bounds show how far it could move if the missing funds did badly.
 
-**Still to confirm:** the 5th/95th percentile choice, and which target is primary (v1's hypothesis stays on abnormal return; net return is added as a second hypothesis).
+**Confirmed for v2:** use 5th/95th percentile fills and report both targets separately, with neither designated primary. The original v1 hypothesis stays on abnormal return.
 
 ---
 
@@ -87,7 +87,11 @@ Findings are packaged in the [point-in-time response](reports/2026-11-17-pit-cha
 - [X] **Report the overlap:** Done. With the 90% rule, 80 of 81 months pass for abnormal return (longest run 46) and 81 of 81 for net return. The one failing month, 2022-12, has the bottom decile at 89.66% observed. Mean coverage is 97% to 99% per decile. v1 had zero such months. See the [overlap report](reports/2026-11-17-v2-overlap.md).
 - [X] **Run the spread:** Done, after you confirmed the 5th/95th fills and both targets. Abnormal return: top beats bottom by about 22 bps a month (95% interval −0.2 to +36 bps, one-sided p 0.005), and the bounds on the mean (7 to 30 bps) stay above zero. Net return: about +2 bps, interval −31 to +29 bps, p 0.44, bounds include zero, so no evidence of an after-fee gain. Ridge and momentum rank funds almost identically (rank correlation 0.9999), so flow adds nothing linearly. See the [results](reports/2026-11-17-v2-spread-results.md).
 
-**Pause for review:** The spread is run. Review the [results](reports/2026-11-17-v2-spread-results.md), especially the cautions on the identical ridge and momentum rankings and the off-centre bootstrap interval, before starting C2.
+**Review follow-up before C2:**
+
+1. Pin both protocol files and verify the reviewed runner, frozen code and registered panel before evaluation. Keep the original run at commit `833cb71`.
+2. Add an uncertainty sensitivity that uses all passing months, including isolated ones, and report it alongside the original bootstrap without changing the spread or the 90% rule.
+3. Describe the 5th/95th fills as conditional scenarios. Verify the changes with tests, then rerun on the exact registered v2 database and compare the original and sensitivity results before C2.
 
 ### C2. Compare setups and check real-world profit
 
