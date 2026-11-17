@@ -13,7 +13,7 @@ The plan is written up in `reports/2026-11-12-research-protocol-v1.md`, with one
 - [X] Check the data is complete and the assumed release dates are reasonable. Any later change to the plan gets saved as a new version before we evaluate anything.
 - [X] Note what is still unverified: what the data looked like on the day it was released, and whether a retail investor could really buy these funds.
 
-## 2. Build the clean fund dataset and find out why outcomes are missing — done, awaiting review
+## 2. Build the clean fund dataset and find out why outcomes are missing — done, decisions pending
 
 - [X] Match share classes to funds and funds to groups. We use the latest information that was available at the time, never information from the future.
 - [X] Count every fund-month in the shared date range (666,430) and sort each into a category: outcome arrived on time (295,308), outcome arrived late (2,550), or outcome missing. See the [panel validation report](reports/2026-11-16-panel-validation.md).
@@ -24,11 +24,11 @@ The plan is written up in `reports/2026-11-12-research-protocol-v1.md`, with one
 **Still to review before we evaluate anything.** If any of these makes us change the plan, save it as a new version first.
 
 - [X] **Data revisions:** Reviewed what each source publicly says about release dates and corrections. No source gives a publication date per observation, and the CRSP notes confirm repeated corrections to returns, TNA, fees and class groups, with no sizes given. See the [summary](reports/2026-11-17-crsp-release-notes-summary.md) and [full review](reports/2026-11-17-data-publication-and-revision-review.md). The size of the changes is still unmeasured.
-- [ ] **Missing group labels:** Some share classes have no group assigned. About 74% of ungrouped funds look like genuine single-class funds. Decision made: count them as their own funds (protocol v2). The panel rebuild is listed in section 3.5.
-- [ ] **Fund-type filter:** We pick fund types partly by name, which is imperfect.
-- [ ] **Who was in the universe:** We are unsure which funds were in the sample at each point in time.
-- [ ] **Could an investor really buy these?** We have not confirmed that a retail investor could buy these share classes, or what investors received when a fund merged.
-- [ ] **Missing is not random:** Funds that merge or close vanish from the data, so the missing outcomes are likely biased toward poor or unusual funds.
+- [X] **Missing group labels:** Some share classes have no group assigned. About 74% of ungrouped funds look like genuine single-class funds. Decision made: count them as their own funds (protocol v2). The rule is built and tested; the rebuild is listed in section 3.5.
+- [X] **Fund-type filter:** Reviewed. The name screen removes 9.0% of rows in our fund types. About 4,800 rows from 195 funds are dropped only because the fund *family* name contains a banned word (such as "Sector Funds"). The index flags catch more than the name does. Our name list is also broader than the paper's. See the [sample-definition review](reports/2026-11-17-sample-definition-review.md). A fix is a decision, listed in 3.5.
+- [X] **Who was in the universe:** Reviewed. The data include dead funds (61.6% of sample classes are dead today), so it is not survivors only. 2.7% of class-months carry a return dated before the fund's start date, and 25% have under 5 million in assets. We cannot tell when each fund first appeared in the database. See the [review](reports/2026-11-17-sample-definition-review.md). A minimum-size rule is a decision, listed in 3.5.
+- [X] **Could an investor really buy these?** Reviewed. About 44% of assets sit in institutional-only classes and 14% of classes are closed to new money, and the panel ignores both. 97% of merged classes name a successor, but the data do not say what shareholders received. Minimum investments and loads are not in our files, so those cannot be tested. See the [review](reports/2026-11-17-sample-definition-review.md). A retail-only rule is a decision, listed in 3.5.
+- [X] **Missing is not random:** Confirmed. Funds that vanish within a year had weaker prior-year returns (average rank 0.39 to 0.42 against 0.51 for survivors) and are far smaller (median 2.6 to 11.7 million against 50.6). Dropping them likely biases results upward. How to treat them is the question in 3.5. See the [review](reports/2026-11-17-sample-definition-review.md).
 
 ## 3. First real test: replay history in order — done, awaiting review
 
@@ -41,6 +41,7 @@ Results are in the [baseline report](reports/2026-11-16-chronological-baseline.m
 First, apply the protocol v2 decision to count single-class funds as their own funds:
 
 - [X] **Settle fund identity:** Decided: follow each class's own history and link it to a group only from the date the group is known.
+- [ ] **Decide the sample rules raised in section 2:** fund-type filter, minimum fund size, retail-only classes, and how to treat funds that vanish. See the decision list in the [sample-definition review](reports/2026-11-17-sample-definition-review.md).
 - [ ] **Decide on possible true gaps:** About 8% of ungrouped funds share a portfolio number with other classes. Decide whether to flag or exclude them.
 - [X] **Change the panel and test it:** Build the single-class rule into the panel code, with tests.
 - [ ] **Rebuild and record:** Rebuild the panel and save its new file fingerprints in the v2 settings.
