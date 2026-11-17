@@ -40,9 +40,9 @@ Results are in the [baseline report](reports/2026-11-16-chronological-baseline.m
 
 First, apply the protocol v2 decision to count single-class funds as their own funds:
 
-- [ ] **Settle fund identity:** Decide how to link a fund's history when it has no group at one date and a group later, using only what was known at each date.
+- [X] **Settle fund identity:** Decided: follow each class's own history and link it to a group only from the date the group is known.
 - [ ] **Decide on possible true gaps:** About 8% of ungrouped funds share a portfolio number with other classes. Decide whether to flag or exclude them.
-- [ ] **Change the panel and test it:** Build the single-class rule into the panel code, with tests.
+- [X] **Change the panel and test it:** Build the single-class rule into the panel code, with tests.
 - [ ] **Rebuild and record:** Rebuild the panel and save its new file fingerprints in the v2 settings.
 - [ ] **Compare with v1:** Rerun the coverage and missing-outcome counts and report v1 and v2 side by side.
 

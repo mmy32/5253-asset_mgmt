@@ -61,7 +61,7 @@ def main():
                 WHEN f.exp_ratio IS NULL THEN 'blank_expense'
                 WHEN f.exp_ratio<0 THEN 'negative_expense'
                 ELSE 'usable' END ELSE 'no_positive_observed_weight' END fee_issue
-          FROM selected s JOIN classes c ON s.fund_id=c.crsp_cl_grp
+          FROM selected s JOIN classes c ON s.fund_id=c.fund_id
             AND s.formation_date=c.formation_date AND c.universe_status='selected'
           LEFT JOIN class_returns r ON c.crsp_fundno=r.crsp_fundno
             AND r.return_month=last_day(s.formation_date + INTERVAL 1 MONTH)
@@ -141,7 +141,7 @@ def main():
                     THEN f.exp_ratio END current_expense,
                   CASE WHEN e.exp_ratio>=0 AND date_diff('day',e.fee_summary_date,r.formation_date)<=730
                     THEN e.exp_ratio END previous_expense
-                FROM selected s JOIN classes c ON s.fund_id=c.crsp_cl_grp
+                FROM selected s JOIN classes c ON s.fund_id=c.fund_id
                   AND s.formation_date=c.formation_date AND c.universe_status='selected'
                 LEFT JOIN class_returns r ON c.crsp_fundno=r.crsp_fundno
                   AND r.return_month=last_day(s.formation_date+INTERVAL 1 MONTH)

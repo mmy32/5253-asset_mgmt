@@ -168,3 +168,84 @@ def test_invalid_lags_and_raw_output_are_rejected(tmp_path: Path):
     config['summary_lag_days'] = -1
     with pytest.raises(ValueError, match='summary_lag_days'):
         build_panel(raw, tmp_path / 'output', config)
+
+
+def _write_group_rule_inputs(raw: Path, summaries: list[dict[str, str]]) -> None:
+    """Two classes with flat returns; `summaries` set each class's group over time."""
+    (raw / 'D2_Carhart_factors').mkdir(parents=True)
+    dates = pd.date_range('2017-01-31', periods=30, freq='ME')
+    write_csv(raw / 'D1a_CRSP_monthly_returns.csv', ['crsp_fundno', 'caldt', 'mtna', 'mret'],
+              [{'crsp_fundno': fund, 'caldt': d.date(), 'mtna': 10, 'mret': .01}
+               for fund in ('000001', '000002') for d in dates])
+    columns = ['crsp_fundno', 'caldt', 'crsp_cl_grp', 'crsp_obj_cd', 'si_obj_cd',
+               'lipper_class', 'lipper_obj_cd', 'wbrger_obj_cd', 'fund_name',
+               'index_fund_flag', 'et_flag', 'mgmt_cd', 'exp_ratio', 'turn_ratio',
+               'fiscal_yearend']
+    rows = []
+    for summary in summaries:
+        row = dict.fromkeys(columns, '')
+        row.update(crsp_obj_cd='EDYG', fund_name='Domestic Growth Fund', mgmt_cd='F1',
+                   exp_ratio='.012', turn_ratio='.5', fiscal_yearend='2015-12-31', **summary)
+        rows.append(row)
+    write_csv(raw / 'D1b_CRSP_fund_summary.csv', columns, rows)
+    with (raw / 'D2_Carhart_factors/D2_Carhart_factors_research.csv').open('w') as f:
+        f.write('Factor file\n')
+        for d in dates:
+            f.write(f'{d:%Y%m},0.1,0.1,0.1,0.1\n')
+    with (raw / 'D2_Carhart_factors/D2_Carhart_factors_momentum.csv').open('w') as f:
+        for d in dates:
+            f.write(f'{d:%Y%m},0.1\n')
+
+
+def _group_rule_config(**overrides: str) -> dict:
+    config = json.loads(Path('configs/fund_panel.json').read_text())
+    config.update(formation_start='2017-01-31', formation_end='2019-06-30',
+                  summary_max_age_days=5000, fee_max_age_days=5000, memory_limit='256MB')
+    config.update(overrides)
+    return config
+
+
+def _fund_ids(output: Path, month: str) -> list[str]:
+    db = duckdb.connect(str(output / 'fund_panel.duckdb'), read_only=True)
+    try:
+        return sorted(r[0] for r in db.execute(
+            "SELECT fund_id FROM panel WHERE formation_date=?", [month]).fetchall())
+    finally:
+        db.close()
+
+
+def test_singleton_rule_keeps_ungrouped_class_as_its_own_fund(tmp_path: Path):
+    raw = tmp_path / 'raw'
+    _write_group_rule_inputs(raw, [
+        {'crsp_fundno': '000001', 'caldt': '2016-09-30', 'crsp_cl_grp': '100'},
+        {'crsp_fundno': '000002', 'caldt': '2016-09-30', 'crsp_cl_grp': ''},
+    ])
+    default_out = tmp_path / 'default'
+    build_panel(raw, default_out, _group_rule_config())
+    singleton_out = tmp_path / 'singleton'
+    build_panel(raw, singleton_out, _group_rule_config(ungrouped_class_rule='singleton'))
+    # Omitting the rule keeps v1 behavior: the ungrouped class is excluded.
+    assert _fund_ids(default_out, '2018-01-31') == ['100']
+    assert _fund_ids(singleton_out, '2018-01-31') == ['100', 'S:000002']
+
+
+def test_known_group_stays_after_a_later_blank_and_applies_only_from_first_report(tmp_path: Path):
+    raw = tmp_path / 'raw'
+    _write_group_rule_inputs(raw, [
+        {'crsp_fundno': '000001', 'caldt': '2016-09-30', 'crsp_cl_grp': '100'},
+        {'crsp_fundno': '000001', 'caldt': '2017-12-31', 'crsp_cl_grp': ''},
+        # Class 2 first reports its group at 2017-12-31; before that it is its own fund.
+        {'crsp_fundno': '000002', 'caldt': '2016-09-30', 'crsp_cl_grp': ''},
+        {'crsp_fundno': '000002', 'caldt': '2017-12-31', 'crsp_cl_grp': '100'},
+    ])
+    output = tmp_path / 'output'
+    build_panel(raw, output, _group_rule_config(ungrouped_class_rule='singleton'))
+    # Group 100 is available 90 days after 2017-12-31, so on 2018-02-28 it is not yet used.
+    assert _fund_ids(output, '2018-02-28') == ['100', 'S:000002']
+    # By 2018-06-30 both rows are available: class 1 keeps its group through the later blank.
+    assert _fund_ids(output, '2018-06-30') == ['100']
+
+
+def test_unknown_ungrouped_class_rule_is_rejected(tmp_path: Path):
+    with pytest.raises(ValueError, match='ungrouped_class_rule'):
+        build_panel(tmp_path / 'raw', tmp_path / 'out', _group_rule_config(ungrouped_class_rule='keep'))

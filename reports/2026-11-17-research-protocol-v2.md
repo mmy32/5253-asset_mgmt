@@ -24,13 +24,13 @@ No return, outcome or portfolio result informed it. The v1 baseline had already 
 
 ## Open design points
 
-1. **Fund identity over time.** A class can lack a group at one formation date and gain one later. Its return history must be linked without using future information. This must be settled before the panel is rebuilt.
+1. **Fund identity over time (settled 2026-11-17).** A class follows its own return history. Once a group is known, it stays attached even after a later blank. If a class gains a group later, its fund id switches on the first date the group is known and its history restarts; earlier months are never re-assigned to the group. Never-grouped classes use `S:` plus the fund number. Implemented in `fund_panel.py` behind `ungrouped_class_rule` (`configs/fund_panel_v2.json`), with tests.
 2. **Possible true gaps.** About 8% of ungrouped funds share a portfolio number with other classes. Decide whether to flag or exclude them.
 3. **Untestable funds.** About 18% have no portfolio number and are treated as single-class under the rule.
 
 ## Required before evaluation
 
-1. Implement the rule in the panel, with tests.
+1. ~~Implement the rule in the panel, with tests.~~ Done (not yet rebuilt).
 2. Rebuild the panel and record new code, config and panel hashes in `configs/research_protocol_v2.json`.
 3. Rerun the coverage and missing-target counts and compare them with v1.
 4. Report v1 and v2 side by side.

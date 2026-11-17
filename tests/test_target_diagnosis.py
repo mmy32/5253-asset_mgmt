@@ -20,7 +20,7 @@ def test_missing_target_precedence_cutoff_and_reconciliation():
       ('factor','2025-09-30',NULL,.02,36),
       ('late','2025-11-30',.01,.02,36),
       ('late_missing','2025-11-30',NULL,NULL,0)""")
-    db.execute("""CREATE TABLE classes AS SELECT fund_id crsp_cl_grp, fund_id crsp_fundno,
+    db.execute("""CREATE TABLE classes AS SELECT fund_id, fund_id crsp_fundno,
         formation_date, 'selected' universe_status, 'EDYG' crsp_obj_cd FROM panel""")
     db.execute("""CREATE TABLE class_returns AS SELECT fund_id crsp_fundno,
         CAST(last_day(formation_date + INTERVAL 1 MONTH) AS DATE) return_month,

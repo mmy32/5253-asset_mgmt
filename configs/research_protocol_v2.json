@@ -14,8 +14,14 @@
       "sensitivity": "report v1 (exclude ungrouped classes) alongside v2 for every headline count"
     }
   },
+  "fund_identity_rule": {
+    "decided": "2026-11-17",
+    "rule": "fund_id = last non-blank crsp_cl_grp known as of the date; if none has been seen, 'S:' + crsp_fundno",
+    "carry_forward": "A group stays attached after a later blank. Only rows with a single summary record on that date are used.",
+    "late_group": "If a class gains a group later, its fund id switches at the first date the group is known and its history restarts. Earlier months are not re-assigned to the group.",
+    "config": "configs/fund_panel_v2.json (ungrouped_class_rule = singleton); configs/fund_panel.json keeps v1 (exclude)"
+  },
   "open_design_points": [
-    "Fund identity over time: a class can lack a group at one formation date and have one at a later date. Decide how its return history is linked before rebuilding the panel, using only information available at each formation date.",
     "Ungrouped funds that share a crsp_portno with other classes (about 8% of ungrouped funds) may be genuine gaps rather than single-class funds. Decide whether to flag or exclude them.",
     "Ungrouped funds with no crsp_portno (about 18%) cannot be tested and are treated as single-class under the rule above."
   ],

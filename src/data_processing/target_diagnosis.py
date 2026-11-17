@@ -28,7 +28,7 @@ def build_diagnosis(db: duckdb.DuckDBPyConnection, factors, cutoff: str,
     db.execute("""
       CREATE TEMP TABLE future_inputs AS
       WITH rows AS (
-        SELECT c.crsp_cl_grp AS fund_id, c.formation_date, c.crsp_obj_cd,
+        SELECT c.fund_id, c.formation_date, c.crsp_obj_cd,
           r.crsp_fundno AS observed_class, r.lag_tna, r.net_return,
           CASE WHEN date_diff('day', f.fee_summary_date, r.formation_date) <= ?
                AND f.exp_ratio >= 0 THEN f.exp_ratio END AS expense_ratio

@@ -23,6 +23,7 @@ SI_CODES = "'AGG','GMC','GRI','GRO','ING','SCG'"
 LIPPER_CODES = ("'EIEI','G','LCCE','LCGE','LCVE','MCCE','MCGE','MCVE',"
                 "'MLCE','MLGE','MLVE','SCCE','SCGE','SCVE'")
 WBR_CODES = "'G','G-I','AGG','GCI','GRI','GRO','LTG','MCG','SCG'"
+UNGROUPED_RULES = ("exclude", "singleton")
 EXCLUDED_NAME = (r"(international|global|foreign|emerging market|balanced|bond|"
                  r"money market|index|sector|real estate|healthcare|technology|"
                  r"financial services|natural resources|precious metal)")
@@ -107,7 +108,9 @@ def make_tables(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
             row_number() OVER (PARTITION BY crsp_fundno, caldt ORDER BY crsp_fundno) AS n
           FROM raw
         )
-        SELECT *, caldt + ? * INTERVAL '1 day' AS available_at
+        SELECT *, caldt + ? * INTERVAL '1 day' AS available_at,
+          last_value(CASE WHEN same_date_rows=1 THEN nullif(trim(crsp_cl_grp),'') END
+            IGNORE NULLS) OVER (PARTITION BY crsp_fundno ORDER BY caldt) AS crsp_cl_grp_known
         FROM numbered WHERE n=1 AND caldt IS NOT NULL
     """, [str(summary), cfg["summary_lag_days"]])
     db.execute("""
@@ -152,11 +155,19 @@ def make_tables(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
         raise ValueError(f"Duplicate share-class economic month: {duplicate}")
     # ASOF chooses the latest available quarterly observation for each class and date.
     print("Applying availability and universe rules...", flush=True)
+    if cfg.get("ungrouped_class_rule", "exclude") == "singleton":
+        # Once a group is known it stays; a class never grouped is its own fund.
+        fund_id = "coalesce(crsp_cl_grp_known, 'S:' || crsp_fundno)"
+        missing_group_status = ""
+    else:
+        fund_id = "crsp_cl_grp"
+        missing_group_status = ("WHEN crsp_cl_grp IS NULL OR trim(crsp_cl_grp)='' "
+                                "THEN 'missing_class_group'")
     db.execute(f"""
         CREATE TABLE classes AS
         WITH joined AS (
           SELECT r.*, s.caldt AS summary_date, s.available_at AS summary_available_at,
-            s.same_date_rows, s.crsp_cl_grp, s.crsp_obj_cd, s.si_obj_cd, s.lipper_class,
+            s.same_date_rows, s.crsp_cl_grp, s.crsp_cl_grp_known, s.crsp_obj_cd, s.si_obj_cd, s.lipper_class,
             s.lipper_obj_cd, s.wbrger_obj_cd, s.fund_name, s.index_fund_flag, s.et_flag,
             s.mgmt_cd, f.fiscal_yearend, f.fee_summary_date, f.fee_available_at,
             CASE WHEN date_diff('day',f.fee_summary_date,r.formation_date) <= ?
@@ -173,7 +184,7 @@ def make_tables(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
             WHEN summary_date IS NULL THEN 'no_available_summary'
             WHEN date_diff('day', summary_date, formation_date) > ? THEN 'stale_summary'
             WHEN same_date_rows > 1 THEN 'ambiguous_summary'
-            WHEN crsp_cl_grp IS NULL OR trim(crsp_cl_grp)='' THEN 'missing_class_group'
+            {missing_group_status}
             WHEN coalesce(index_fund_flag,'') IN ('B','D','E') THEN 'index_fund'
             WHEN coalesce(et_flag,'') IN ('F','N') THEN 'exchange_traded'
             WHEN regexp_matches(lower(coalesce(fund_name,'')), ?) THEN 'excluded_name'
@@ -187,13 +198,13 @@ def make_tables(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
                coalesce(wbrger_obj_cd,'') IN ({WBR_CODES})) THEN 'unknown_objective'
             ELSE 'selected' END AS universe_status
           FROM joined
-        ) SELECT * FROM classified
+        ) SELECT *, {fund_id} AS fund_id FROM classified
     """, [cfg["fee_max_age_days"], cfg["fee_max_age_days"], cfg["formation_start"],
             cfg["formation_end"], cfg["summary_max_age_days"], EXCLUDED_NAME])
     print("Aggregating eligible share classes to funds...", flush=True)
     db.execute("""
         CREATE TABLE fund_base AS
-        SELECT crsp_cl_grp AS fund_id, return_month, formation_date,
+        SELECT fund_id, return_month, formation_date,
           formation_date AS return_assumed_available_at,
           count(*) AS share_classes,
           count(*) FILTER (WHERE lag_tna IS NULL) AS classes_missing_lag_tna,
@@ -227,21 +238,21 @@ def make_tables(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
           max(summary_available_at) AS latest_summary_available_at,
           max(fee_available_at) AS latest_fee_available_at
         FROM classes WHERE universe_status='selected'
-        GROUP BY crsp_cl_grp, return_month, formation_date
+        GROUP BY fund_id, return_month, formation_date
     """)
     db.execute("""
         CREATE TABLE funds AS
         WITH exclusions AS (
-          SELECT crsp_cl_grp, formation_date,
+          SELECT fund_id, formation_date,
             count(*) FILTER (WHERE universe_status<>'selected') AS known_excluded_classes
-          FROM classes WHERE crsp_cl_grp IS NOT NULL GROUP BY 1,2
+          FROM classes WHERE fund_id IS NOT NULL GROUP BY 1,2
         ), base AS (
           SELECT f.* EXCLUDE (flow), f.flow AS raw_flow,
             CASE WHEN net_return <= ? THEN f.flow END AS flow,
             e.known_excluded_classes, net_return > ? AS return_above_cutoff,
             CASE WHEN net_return <= ? THEN net_return + expense_ratio/12 END AS gross_return
           FROM fund_base f JOIN exclusions e
-            ON f.fund_id=e.crsp_cl_grp AND f.formation_date=e.formation_date
+            ON f.fund_id=e.fund_id AND f.formation_date=e.formation_date
         ), family AS (
           SELECT *, count(*) OVER w-1 AS family_fund_count,
             CASE WHEN count(tna) OVER w=count(*) OVER w
@@ -293,7 +304,7 @@ def add_targets(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
     db.execute("""
       CREATE TABLE outcomes AS
       WITH rows AS (
-        SELECT c.crsp_cl_grp AS fund_id, c.formation_date, r.crsp_fundno AS observed_class,
+        SELECT c.fund_id, c.formation_date, r.crsp_fundno AS observed_class,
           r.lag_tna, r.net_return,
           CASE WHEN date_diff('day', f.fee_summary_date, r.formation_date) <= ?
                     AND f.exp_ratio >= 0 THEN f.exp_ratio END AS expense_ratio
@@ -376,6 +387,8 @@ def build_panel(raw: Path, output: Path, config: dict[str, Any]) -> None:
     for key in ("summary_lag_days", "fiscal_lag_days", "summary_max_age_days", "fee_max_age_days"):
         if not isinstance(config[key], int) or config[key] < 0:
             raise ValueError(f"{key} must be a nonnegative number of days")
+    if config.get("ungrouped_class_rule", "exclude") not in UNGROUPED_RULES:
+        raise ValueError(f"ungrouped_class_rule must be one of {UNGROUPED_RULES}")
     if not math.isfinite(config["max_fund_return"]) or config["max_fund_return"] < 0:
         raise ValueError("max_fund_return must be a finite nonnegative number")
     source_files = [raw / "D1a_CRSP_monthly_returns.csv", raw / "D1b_CRSP_fund_summary.csv",
