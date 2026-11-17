@@ -8,5 +8,8 @@
   "max_fund_return": 1.0,
   "memory_limit": "1GB",
   "threads": 2,
-  "ungrouped_class_rule": "singleton"
+  "ungrouped_class_rule": "singleton",
+  "excluded_name_pattern": "international|balanced|sector|bond|money market|index",
+  "name_match_part": "fund",
+  "min_fund_tna_millions": 5
 }

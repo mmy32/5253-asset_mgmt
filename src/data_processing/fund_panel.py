@@ -24,6 +24,7 @@ LIPPER_CODES = ("'EIEI','G','LCCE','LCGE','LCVE','MCCE','MCGE','MCVE',"
                 "'MLCE','MLGE','MLVE','SCCE','SCGE','SCVE'")
 WBR_CODES = "'G','G-I','AGG','GCI','GRI','GRO','LTG','MCG','SCG'"
 UNGROUPED_RULES = ("exclude", "singleton")
+NAME_PARTS = ("full", "fund")
 EXCLUDED_NAME = (r"(international|global|foreign|emerging market|balanced|bond|"
                  r"money market|index|sector|real estate|healthcare|technology|"
                  r"financial services|natural resources|precious metal)")
@@ -96,7 +97,7 @@ def make_tables(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
     db.execute("""
         CREATE TABLE summary AS
         WITH raw AS (
-          SELECT crsp_fundno, try_cast(caldt AS DATE) AS caldt, crsp_cl_grp,
+          SELECT crsp_fundno, try_cast(caldt AS DATE) AS caldt, crsp_cl_grp, crsp_portno,
             crsp_obj_cd, si_obj_cd, lipper_class, lipper_obj_cd, wbrger_obj_cd,
             fund_name, index_fund_flag, et_flag, mgmt_cd,
             try_cast(exp_ratio AS DOUBLE) AS exp_ratio,
@@ -113,6 +114,18 @@ def make_tables(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
             IGNORE NULLS) OVER (PARTITION BY crsp_fundno ORDER BY caldt) AS crsp_cl_grp_known
         FROM numbered WHERE n=1 AND caldt IS NOT NULL
     """, [str(summary), cfg["summary_lag_days"]])
+    # Sensitivity flag only: uses the whole file, so it is not point-in-time.
+    db.execute("""
+      CREATE TABLE portno_shared AS
+      WITH latest AS (
+        SELECT crsp_fundno, arg_max(nullif(trim(crsp_portno),''), caldt)
+            FILTER (WHERE nullif(trim(crsp_portno),'') IS NOT NULL) AS portno
+        FROM summary GROUP BY 1
+      )
+      SELECT crsp_fundno,
+        portno IS NOT NULL AND count(*) OVER (PARTITION BY portno) > 1 AS shares_portno
+      FROM latest
+    """)
     db.execute("""
       CREATE TABLE fees AS
       WITH dated AS (
@@ -163,13 +176,19 @@ def make_tables(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
         fund_id = "crsp_cl_grp"
         missing_group_status = ("WHEN crsp_cl_grp IS NULL OR trim(crsp_cl_grp)='' "
                                 "THEN 'missing_class_group'")
+    # CRSP names read "Trust name: Fund name"; "fund" matches only the part after the colon.
+    if cfg.get("name_match_part", "full") == "fund":
+        name_text = "regexp_replace(coalesce(fund_name,''), '^[^:]*:', '')"
+    else:
+        name_text = "coalesce(fund_name,'')"
     db.execute(f"""
         CREATE TABLE classes AS
         WITH joined AS (
           SELECT r.*, s.caldt AS summary_date, s.available_at AS summary_available_at,
             s.same_date_rows, s.crsp_cl_grp, s.crsp_cl_grp_known, s.crsp_obj_cd, s.si_obj_cd, s.lipper_class,
             s.lipper_obj_cd, s.wbrger_obj_cd, s.fund_name, s.index_fund_flag, s.et_flag,
-            s.mgmt_cd, f.fiscal_yearend, f.fee_summary_date, f.fee_available_at,
+            s.mgmt_cd, coalesce(p.shares_portno, false) AS shares_portno,
+            f.fiscal_yearend, f.fee_summary_date, f.fee_available_at,
             CASE WHEN date_diff('day',f.fee_summary_date,r.formation_date) <= ?
                  AND f.exp_ratio >= 0 THEN f.exp_ratio END AS expense_ratio,
             CASE WHEN date_diff('day',f.fee_summary_date,r.formation_date) <= ?
@@ -178,6 +197,7 @@ def make_tables(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
             ON r.crsp_fundno=s.crsp_fundno AND r.formation_date>=s.available_at
           ASOF LEFT JOIN fees f
             ON r.crsp_fundno=f.crsp_fundno AND r.formation_date>=f.fee_available_at
+          LEFT JOIN portno_shared p ON r.crsp_fundno=p.crsp_fundno
           WHERE r.formation_date BETWEEN ? AND ?
         ), classified AS (
           SELECT *, CASE
@@ -187,7 +207,7 @@ def make_tables(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
             {missing_group_status}
             WHEN coalesce(index_fund_flag,'') IN ('B','D','E') THEN 'index_fund'
             WHEN coalesce(et_flag,'') IN ('F','N') THEN 'exchange_traded'
-            WHEN regexp_matches(lower(coalesce(fund_name,'')), ?) THEN 'excluded_name'
+            WHEN regexp_matches(lower({name_text}), ?) THEN 'excluded_name'
             WHEN crsp_obj_cd IS NOT NULL AND trim(crsp_obj_cd)<>'' AND NOT
               (left(crsp_obj_cd,3) IN ('EDC','EDY') AND crsp_obj_cd NOT IN ('EDYH','EDYS'))
               THEN 'other_objective'
@@ -200,7 +220,8 @@ def make_tables(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
           FROM joined
         ) SELECT *, {fund_id} AS fund_id FROM classified
     """, [cfg["fee_max_age_days"], cfg["fee_max_age_days"], cfg["formation_start"],
-            cfg["formation_end"], cfg["summary_max_age_days"], EXCLUDED_NAME])
+            cfg["formation_end"], cfg["summary_max_age_days"],
+            cfg.get("excluded_name_pattern", EXCLUDED_NAME)])
     print("Aggregating eligible share classes to funds...", flush=True)
     db.execute("""
         CREATE TABLE fund_base AS
@@ -234,6 +255,7 @@ def make_tables(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
           END AS flow,
           CASE WHEN count(DISTINCT mgmt_cd)=1 AND count(mgmt_cd)=count(*)
             THEN min(mgmt_cd) END AS family_id,
+          bool_or(fund_id LIKE 'S:%' AND shares_portno) AS ungrouped_shares_portno,
           max(summary_date) AS latest_summary_date,
           max(summary_available_at) AS latest_summary_available_at,
           max(fee_available_at) AS latest_fee_available_at
@@ -330,7 +352,10 @@ def add_targets(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
                         ELSE 0 END)/sum(lag_tna) END AS target_gross_return
       FROM rows GROUP BY 1,2
     """, [cfg["fee_max_age_days"], cfg["max_fund_return"]])
-    db.execute("""
+    # Months below the floor leave the panel but stay in `funds`, so feature history is intact.
+    floor = cfg.get("min_fund_tna_millions")
+    size_floor = "" if floor is None else f"WHERE with_family.tna >= {float(floor)!r}"
+    db.execute(f"""
       CREATE TABLE panel AS
       WITH current AS (
         SELECT f.*, a.abnormal_return AS prior_month_abnormal_return,
@@ -375,6 +400,7 @@ def add_targets(db: duckdb.DuckDBPyConnection, raw: Path, cfg: dict[str, Any]) -
           THEN last_day(with_family.formation_date + INTERVAL 2 MONTH) END AS target_assumed_available_at
       FROM with_family LEFT JOIN outcomes_with_alpha target
         ON with_family.fund_id=target.fund_id AND with_family.formation_date=target.formation_date
+      {size_floor}
     """)
 
 
@@ -389,6 +415,15 @@ def build_panel(raw: Path, output: Path, config: dict[str, Any]) -> None:
             raise ValueError(f"{key} must be a nonnegative number of days")
     if config.get("ungrouped_class_rule", "exclude") not in UNGROUPED_RULES:
         raise ValueError(f"ungrouped_class_rule must be one of {UNGROUPED_RULES}")
+    if config.get("name_match_part", "full") not in NAME_PARTS:
+        raise ValueError(f"name_match_part must be one of {NAME_PARTS}")
+    pattern = config.get("excluded_name_pattern", EXCLUDED_NAME)
+    if not isinstance(pattern, str) or not pattern.strip():
+        raise ValueError("excluded_name_pattern must be a nonempty regular expression")
+    floor = config.get("min_fund_tna_millions")
+    if floor is not None and (isinstance(floor, bool) or not isinstance(floor, int | float)
+                              or not math.isfinite(floor) or floor < 0):
+        raise ValueError("min_fund_tna_millions must be a finite nonnegative number")
     if not math.isfinite(config["max_fund_return"]) or config["max_fund_return"] < 0:
         raise ValueError("max_fund_return must be a finite nonnegative number")
     source_files = [raw / "D1a_CRSP_monthly_returns.csv", raw / "D1b_CRSP_fund_summary.csv",
@@ -400,6 +435,7 @@ def build_panel(raw: Path, output: Path, config: dict[str, Any]) -> None:
     output.mkdir(parents=True, exist_ok=True)
     expected = ["fund_panel.duckdb", "fund_panel.parquet", "class_lineage.parquet",
                 "universe_coverage.csv", "universe_coverage_monthly.csv", "fund_coverage.csv",
+                "size_floor_coverage.csv",
                 "run_config.json"]
     if any((output / name).exists() for name in expected):
         raise FileExistsError(f"Output already exists in {output}; choose a new output directory")
@@ -435,6 +471,13 @@ def build_panel(raw: Path, output: Path, config: dict[str, Any]) -> None:
               count(*) FILTER (WHERE known_excluded_classes>0) AS partial_known_groups
             FROM panel GROUP BY 1 ORDER BY 1) TO ? (HEADER, DELIMITER ',')
         """, [str(output / "fund_coverage.csv")])
+        floor = config.get("min_fund_tna_millions")
+        db.execute("""
+          COPY (SELECT year(formation_date) AS year, count(*) AS fund_months_before_floor,
+              count(*) FILTER (WHERE ? IS NOT NULL AND (tna IS NULL OR tna < ?))
+                AS fund_months_below_floor
+            FROM funds GROUP BY 1 ORDER BY 1) TO ? (HEADER, DELIMITER ',')
+        """, [floor, floor, str(output / "size_floor_coverage.csv")])
         checks = db.execute("""
           SELECT count(*) FILTER (WHERE summary_available_at>formation_date),
             count(*) FILTER (WHERE formation_date<=return_month),

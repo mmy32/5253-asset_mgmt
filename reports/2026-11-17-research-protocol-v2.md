@@ -22,17 +22,28 @@ So v1 was dropping real funds, not only filling data gaps.
 
 No return, outcome or portfolio result informed it. The v1 baseline had already been run and its outcomes examined before this change, so v2 is not a blind registration. The rationale is the data-vintage review, not performance.
 
+## Further changes decided 2026-11-17
+
+These were decided together and folded into v2 rather than a v3: no v2 panel had been built and no v2 result seen. v1 outcomes were examined earlier, so the registration is not blind. Evidence is in the [sample-definition review](2026-11-17-sample-definition-review.md) and the [point-in-time response](2026-11-17-pit-challenge-response.md).
+
+| Item | v1 | v2 | Sensitivity |
+|---|---|---|---|
+| Name screen | 15 words matched on the full name | The paper's six words (international, balanced, sector, bond, money market, index), matched on the fund part of the name only (after the first colon). Index and ETF flags still apply. | Add "global" |
+| Minimum size | None | Fund TNA known at formation of at least 5 million; a missing TNA fails. Months below the floor stay in the history used for loadings, momentum and family features. | No floor |
+| Ungrouped funds sharing a portfolio number (about 8%) | Excluded with all ungrouped | Kept as their own funds and flagged `ungrouped_shares_portno` (whole-file flag, not point-in-time) | Drop flagged funds |
+| Funds that vanish | No substitution, no renormalising | Unchanged; report the missing weight | Follow merged funds into the named successor (not yet implemented; merger terms are undated) |
+
+Set aside: investability (retail-only classes, open-to-investors flags). It is not a concern for this study and no rule is added.
+
 ## Open design points
 
-1. **Fund identity over time (settled 2026-11-17).** A class follows its own return history. Once a group is known, it stays attached even after a later blank. If a class gains a group later, its fund id switches on the first date the group is known and its history restarts; earlier months are never re-assigned to the group. Never-grouped classes use `S:` plus the fund number. Implemented in `fund_panel.py` behind `ungrouped_class_rule` (`configs/fund_panel_v2.json`), with tests.
-2. **Possible true gaps.** About 8% of ungrouped funds share a portfolio number with other classes. Decide whether to flag or exclude them.
-3. **Untestable funds.** About 18% have no portfolio number and are treated as single-class under the rule.
+1. **Untestable funds.** About 18% of ungrouped funds have no portfolio number and are treated as single-class under the rule.
 
 ## Required before evaluation
 
-1. ~~Implement the rule in the panel, with tests.~~ Done (not yet rebuilt).
+1. ~~Implement the rules in the panel, with tests.~~ Done: identity rule, name rule, size floor and portfolio-number flag (not yet rebuilt).
 2. Rebuild the panel and record new code, config and panel hashes in `configs/research_protocol_v2.json`.
 3. Rerun the coverage and missing-target counts and compare them with v1.
-4. Report v1 and v2 side by side.
+4. Report v1 and v2 side by side, plus the sensitivities in the table above.
 
 Status: **design registered; the panel has not been rebuilt and no v2 counts exist.**

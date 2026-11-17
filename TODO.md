@@ -41,9 +41,9 @@ Results are in the [baseline report](reports/2026-11-16-chronological-baseline.m
 First, apply the protocol v2 decision to count single-class funds as their own funds:
 
 - [X] **Settle fund identity:** Decided: follow each class's own history and link it to a group only from the date the group is known.
-- [ ] **Decide the sample rules raised in section 2:** fund-type filter, minimum fund size, and how to treat funds that vanish. See the decision list in the [sample-definition review](reports/2026-11-17-sample-definition-review.md).
-- [ ] **Decide on possible true gaps:** About 8% of ungrouped funds share a portfolio number with other classes. Decide whether to flag or exclude them.
-- [X] **Change the panel and test it:** Build the single-class rule into the panel code, with tests.
+- [X] **Decide the sample rules raised in section 2:** Decided and folded into v2: the paper's six name words matched on the fund part only, a 5 million fund-size floor, vanishing funds left missing with the gap reported, no retail-only rule. See the [v2 protocol](reports/2026-11-17-research-protocol-v2.md).
+- [X] **Decide on possible true gaps:** About 8% of ungrouped funds share a portfolio number with other classes. Decided: keep them as their own funds, flag them, and report a sensitivity that drops them.
+- [X] **Change the panel and test it:** (identity rule, name rule, size floor and the shared-portfolio-number flag are built and tested.) Build the single-class rule into the panel code, with tests.
 - [ ] **Rebuild and record:** Rebuild the panel and save its new file fingerprints in the v2 settings.
 - [ ] **Compare with v1:** Rerun the coverage and missing-outcome counts and report v1 and v2 side by side.
 

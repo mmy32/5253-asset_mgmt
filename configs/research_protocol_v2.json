@@ -12,6 +12,26 @@
       "v2": "classes with no crsp_cl_grp on the latest available summary are treated as single-class funds and identified by crsp_fundno",
       "applies_to": "formation universe, feature history, targets and selected-portfolio weights",
       "sensitivity": "report v1 (exclude ungrouped classes) alongside v2 for every headline count"
+    },
+    "sample.name_screen": {
+      "v1": "classes whose full name contains any of 15 words (international, global, foreign, emerging market, balanced, bond, money market, index, sector, real estate, healthcare, technology, financial services, natural resources, precious metal) are excluded",
+      "v2": "classes whose fund name (the text after the first colon; the whole name if there is none) contains international, balanced, sector, bond, money market or index are excluded. These are the paper's six words. The index and ETF flags still apply.",
+      "why": "About 4,800 class-quarters from 195 classes were dropped only because the trust name contained a word such as 'Sector Funds'. The paper's list is shorter. See reports/2026-11-17-sample-definition-review.md.",
+      "sensitivity": "add 'global' to the word list"
+    },
+    "sample.minimum_fund_size": {
+      "v1": "none",
+      "v2": "a fund-month enters the panel only if the fund's TNA known at formation is at least 5 million (CRSP units: millions); a missing TNA fails. Months below the floor stay in the history used for factor loadings, momentum and family features.",
+      "why": "The paper requires holdings, which probably screens out small, young funds; we do not use holdings. 25.1% of class-months have TNA below 5 million.",
+      "sensitivity": "no floor"
+    },
+    "sample.shared_portfolio_number_funds": {
+      "v2": "ungrouped classes whose latest portfolio number is shared with another class stay in as their own funds and carry ungrouped_shares_portno = true (computed from the whole file, so a sensitivity flag, not point-in-time)",
+      "sensitivity": "drop funds with ungrouped_shares_portno = true"
+    },
+    "outcomes.vanishing_funds": {
+      "v2": "unchanged from v1: no substitution, no renormalising; report the missing weight",
+      "sensitivity": "follow merged funds into the successor named in merge_fundno (not yet implemented; merger terms are undated, so this is a sensitivity only)"
     }
   },
   "fund_identity_rule": {
@@ -22,14 +42,15 @@
     "config": "configs/fund_panel_v2.json (ungrouped_class_rule = singleton); configs/fund_panel.json keeps v1 (exclude)"
   },
   "open_design_points": [
-    "Ungrouped funds that share a crsp_portno with other classes (about 8% of ungrouped funds) may be genuine gaps rather than single-class funds. Decide whether to flag or exclude them.",
-    "Ungrouped funds with no crsp_portno (about 18%) cannot be tested and are treated as single-class under the rule above."
+    "Ungrouped funds with no crsp_portno (about 18%) cannot be tested and are treated as single-class."
   ],
   "required_before_evaluation": [
-    "Implement the rule in the panel with tests.",
+    "Implement the rules in the panel with tests. Done 2026-11-17 for the identity rule, name rule, size floor and portfolio-number flag.",
     "Rebuild the panel and record new code, config and panel hashes in this file.",
     "Rerun the coverage and missing-target counts and compare them with v1.",
-    "Report v1 and v2 side by side."
+    "Report v1 and v2 side by side, plus the sensitivities listed under changes."
   ],
-  "unchanged": "All other v1 settings: dates, features, availability lags, target, model, portfolios, costs, inference and freeze conditions."
+  "unchanged": "All other v1 settings: dates, features, availability lags, target, model, portfolios, costs, inference and freeze conditions.",
+  "decided_2026-11-17": "Name rule, size floor, treatment of the shared-portfolio-number funds and of vanishing funds were decided together and folded into v2 (not a v3), because no v2 panel had been built and no v2 result seen. v1 outcomes were examined earlier, so the registration is not blind.",
+  "set_aside": "Investability (retail-only classes, open-to-investors flags) is not a concern for this study and no rule is added."
 }

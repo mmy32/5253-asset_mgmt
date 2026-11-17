@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import calendar
 import csv
 import json
@@ -62,7 +64,7 @@ def test_panel_preserves_missing_returns_and_respects_lags(tmp_path: Path):
             returns.append({'crsp_fundno': fund, 'caldt': pd.offsets.BMonthEnd().rollback(dt).date(), 'mtna': tna,
                             'mret': 'R' if fund == '000002' and i == 12 else net})
     write_csv(raw / 'D1a_CRSP_monthly_returns.csv', names, returns)
-    columns = ['crsp_fundno', 'caldt', 'crsp_cl_grp', 'crsp_obj_cd', 'si_obj_cd',
+    columns = ['crsp_fundno', 'caldt', 'crsp_cl_grp', 'crsp_portno', 'crsp_obj_cd', 'si_obj_cd',
                'lipper_class', 'lipper_obj_cd', 'wbrger_obj_cd', 'fund_name',
                'index_fund_flag', 'et_flag', 'mgmt_cd', 'exp_ratio', 'turn_ratio',
                'fiscal_yearend']
@@ -170,22 +172,24 @@ def test_invalid_lags_and_raw_output_are_rejected(tmp_path: Path):
         build_panel(raw, tmp_path / 'output', config)
 
 
-def _write_group_rule_inputs(raw: Path, summaries: list[dict[str, str]]) -> None:
+def _write_group_rule_inputs(raw: Path, summaries: list[dict[str, str]],
+                             tna: dict[str, float] | None = None) -> None:
     """Two classes with flat returns; `summaries` set each class's group over time."""
     (raw / 'D2_Carhart_factors').mkdir(parents=True)
     dates = pd.date_range('2017-01-31', periods=30, freq='ME')
     write_csv(raw / 'D1a_CRSP_monthly_returns.csv', ['crsp_fundno', 'caldt', 'mtna', 'mret'],
-              [{'crsp_fundno': fund, 'caldt': d.date(), 'mtna': 10, 'mret': .01}
+              [{'crsp_fundno': fund, 'caldt': d.date(), 'mtna': (tna or {}).get(fund, 10), 'mret': .01}
                for fund in ('000001', '000002') for d in dates])
-    columns = ['crsp_fundno', 'caldt', 'crsp_cl_grp', 'crsp_obj_cd', 'si_obj_cd',
+    columns = ['crsp_fundno', 'caldt', 'crsp_cl_grp', 'crsp_portno', 'crsp_obj_cd', 'si_obj_cd',
                'lipper_class', 'lipper_obj_cd', 'wbrger_obj_cd', 'fund_name',
                'index_fund_flag', 'et_flag', 'mgmt_cd', 'exp_ratio', 'turn_ratio',
                'fiscal_yearend']
     rows = []
     for summary in summaries:
         row = dict.fromkeys(columns, '')
-        row.update(crsp_obj_cd='EDYG', fund_name='Domestic Growth Fund', mgmt_cd='F1',
-                   exp_ratio='.012', turn_ratio='.5', fiscal_yearend='2015-12-31', **summary)
+        row.update({'crsp_obj_cd': 'EDYG', 'fund_name': 'Domestic Growth Fund', 'mgmt_cd': 'F1',
+                    'exp_ratio': '.012', 'turn_ratio': '.5', 'fiscal_yearend': '2015-12-31',
+                    **summary})
         rows.append(row)
     write_csv(raw / 'D1b_CRSP_fund_summary.csv', columns, rows)
     with (raw / 'D2_Carhart_factors/D2_Carhart_factors_research.csv').open('w') as f:
@@ -197,7 +201,7 @@ def _write_group_rule_inputs(raw: Path, summaries: list[dict[str, str]]) -> None
             f.write(f'{d:%Y%m},0.1\n')
 
 
-def _group_rule_config(**overrides: str) -> dict:
+def _group_rule_config(**overrides: object) -> dict:
     config = json.loads(Path('configs/fund_panel.json').read_text())
     config.update(formation_start='2017-01-31', formation_end='2019-06-30',
                   summary_max_age_days=5000, fee_max_age_days=5000, memory_limit='256MB')
@@ -249,3 +253,83 @@ def test_known_group_stays_after_a_later_blank_and_applies_only_from_first_repor
 def test_unknown_ungrouped_class_rule_is_rejected(tmp_path: Path):
     with pytest.raises(ValueError, match='ungrouped_class_rule'):
         build_panel(tmp_path / 'raw', tmp_path / 'out', _group_rule_config(ungrouped_class_rule='keep'))
+
+
+PAPER_NAMES = 'international|balanced|sector|bond|money market|index'
+
+
+def _name_screen_ids(tmp_path: Path, **overrides: object) -> list[str]:
+    raw = tmp_path / 'raw'
+    _write_group_rule_inputs(raw, [
+        {'crsp_fundno': '000001', 'caldt': '2016-09-30',
+         'fund_name': 'Sector Funds: Domestic Growth Fund'},
+        {'crsp_fundno': '000002', 'caldt': '2016-09-30',
+         'fund_name': 'Trust: Global Growth Fund'},
+    ])
+    output = tmp_path / 'output'
+    build_panel(raw, output, _group_rule_config(ungrouped_class_rule='singleton', **overrides))
+    return _fund_ids(output, '2018-01-31')
+
+
+def test_name_screen_defaults_to_the_full_v1_word_list(tmp_path: Path):
+    assert _name_screen_ids(tmp_path) == []
+
+
+def test_name_screen_can_use_paper_words_on_the_fund_part_only(tmp_path: Path):
+    ids = _name_screen_ids(tmp_path, excluded_name_pattern=PAPER_NAMES, name_match_part='fund')
+    assert ids == ['S:000001', 'S:000002']
+
+
+def test_name_screen_on_the_full_name_still_catches_the_trust_word(tmp_path: Path):
+    ids = _name_screen_ids(tmp_path, excluded_name_pattern=PAPER_NAMES, name_match_part='full')
+    assert ids == ['S:000002']
+
+
+@pytest.mark.parametrize('overrides, message', [
+    ({'name_match_part': 'trust'}, 'name_match_part'),
+    ({'excluded_name_pattern': ' '}, 'excluded_name_pattern'),
+    ({'min_fund_tna_millions': -1}, 'min_fund_tna_millions'),
+])
+def test_invalid_name_and_size_settings_are_rejected(tmp_path: Path, overrides, message):
+    with pytest.raises(ValueError, match=message):
+        build_panel(tmp_path / 'raw', tmp_path / 'out', _group_rule_config(**overrides))
+
+
+def test_size_floor_drops_small_fund_months_but_keeps_their_history(tmp_path: Path):
+    raw = tmp_path / 'raw'
+    _write_group_rule_inputs(raw, [
+        {'crsp_fundno': '000001', 'caldt': '2016-09-30'},
+        {'crsp_fundno': '000002', 'caldt': '2016-09-30'},
+    ], tna={'000001': 10, '000002': 30})
+    floor_out, open_out = tmp_path / 'floor', tmp_path / 'open'
+    build_panel(raw, floor_out, _group_rule_config(
+        ungrouped_class_rule='singleton', min_fund_tna_millions=20))
+    build_panel(raw, open_out, _group_rule_config(ungrouped_class_rule='singleton'))
+    assert _fund_ids(floor_out, '2018-01-31') == ['S:000002']
+    assert _fund_ids(open_out, '2018-01-31') == ['S:000001', 'S:000002']
+    db = duckdb.connect(str(floor_out / 'fund_panel.duckdb'), read_only=True)
+    try:
+        kept = db.execute("SELECT count(*) FROM funds WHERE fund_id='S:000001'").fetchone()
+        assert kept is not None and kept[0] > 0
+    finally:
+        db.close()
+    coverage = pd.read_csv(floor_out / 'size_floor_coverage.csv')
+    assert coverage.fund_months_below_floor.sum() > 0
+    assert pd.read_csv(open_out / 'size_floor_coverage.csv').fund_months_below_floor.sum() == 0
+
+
+def test_ungrouped_fund_sharing_a_portfolio_number_is_flagged(tmp_path: Path):
+    raw = tmp_path / 'raw'
+    _write_group_rule_inputs(raw, [
+        {'crsp_fundno': '000001', 'caldt': '2016-09-30', 'crsp_portno': '7'},
+        {'crsp_fundno': '000002', 'caldt': '2016-09-30', 'crsp_portno': '7'},
+    ])
+    output = tmp_path / 'output'
+    build_panel(raw, output, _group_rule_config(ungrouped_class_rule='singleton'))
+    db = duckdb.connect(str(output / 'fund_panel.duckdb'), read_only=True)
+    try:
+        flags = db.execute("""SELECT DISTINCT ungrouped_shares_portno FROM panel
+                              WHERE formation_date='2018-01-31'""").fetchall()
+    finally:
+        db.close()
+    assert flags == [(True,)]
