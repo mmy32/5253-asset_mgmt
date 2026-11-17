@@ -17,7 +17,13 @@ Stop after each major milestone for review.
 - [X] Compared observable formation characteristics and coverage by year and objective. Specified missing-weight, merger and closure treatment; selected-portfolio missing weights are reported in the Milestone 3 baseline.
 - [X] Chose the working fund panel and factor parser; verified the factor parsers agree on the supplied files and tested timing, aggregation, duplicate returns and future-source changes. Existing panel hashes and v1 rules remain unchanged.
 - [X] Recorded the proposed 81 evaluation months, 82,539 feature-complete rows, 2,268 of those with missing targets and 1,441 with missing net returns. No month has fewer than 20 feature-complete funds. A missing net return occurs in every evaluation month among the eligible universe.
-- [ ] Review the remaining limitations before evaluation: unverified historical data vintages and availability, incomplete class groups, imperfect objective/name screens, historical regression membership, absent verified investor access and merger proceeds, and nonrandom missingness. Register a new protocol version before evaluation if changing the v1 panel or rules.
+- [ ] Review the remaining limitations before evaluation. Register a new protocol version before evaluation if changing the v1 panel or rules. Sub-items:
+  - [ ] Unverified historical data vintages and availability: data may have been revised after the dates we assume they were public.
+  - [ ] Incomplete class groups: some share classes lack group assignments.
+  - [ ] Imperfect objective/name screens: name-based fund-objective screening is imperfect.
+  - [ ] Historical regression membership: membership in the regression universe over time is uncertain.
+  - [ ] Absent verified investor access and merger proceeds: not verified that a retail investor could buy these classes, or what merger proceeds look like.
+  - [ ] Nonrandom missingness: funds that merge or close drop out, so missing outcomes are not random.
 
 ## 3. Chronological baseline — complete for review
 
