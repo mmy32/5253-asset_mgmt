@@ -2,7 +2,7 @@
   "protocol_id": "fund-flow-momentum-v2",
   "supersedes": "fund-flow-momentum-v1",
   "registered_date": "2026-11-17",
-  "status": "design_registered_pending_panel_rebuild",
+  "status": "panel_rebuilt_pending_review",
   "change_policy": "Every v1 setting not listed under changes still applies. Any further change requires a new version and a dated explanation before evaluation.",
   "rationale": "CRSP removed class-group ids for funds with a single share class (April 2024 release notes). A test on D1b found that about 74% of funds with no group look like single-class funds, so v1 excluded real funds. See reports/2026-11-17-crsp-release-notes-summary.md.",
   "outcome_independence": "The decision rests on release notes and on D1b group and portfolio-number fields. No return, outcome or portfolio result was used. Note that v1 baseline outcomes had already been examined (reports/2026-11-16-chronological-baseline.md) before this change.",
@@ -45,12 +45,38 @@
     "Ungrouped funds with no crsp_portno (about 18%) cannot be tested and are treated as single-class."
   ],
   "required_before_evaluation": [
-    "Implement the rules in the panel with tests. Done 2026-11-17 for the identity rule, name rule, size floor and portfolio-number flag.",
-    "Rebuild the panel and record new code, config and panel hashes in this file.",
-    "Rerun the coverage and missing-target counts and compare them with v1.",
-    "Report v1 and v2 side by side, plus the sensitivities listed under changes."
+    "Implement the rules in the panel with tests. Done 2026-11-17.",
+    "Rebuild the panel and record code, config and panel hashes. Done 2026-11-17 (see provenance).",
+    "Rerun the coverage and missing-target counts and compare them with v1. Done 2026-11-17.",
+    "Report v1 and v2 side by side. Done for the main comparison; the sensitivities listed under changes are not yet run."
   ],
   "unchanged": "All other v1 settings: dates, features, availability lags, target, model, portfolios, costs, inference and freeze conditions.",
   "decided_2026-11-17": "Name rule, size floor, treatment of the shared-portfolio-number funds and of vanishing funds were decided together and folded into v2 (not a v3), because no v2 panel had been built and no v2 result seen. v1 outcomes were examined earlier, so the registration is not blind.",
-  "set_aside": "Investability (retail-only classes, open-to-investors flags) is not a concern for this study and no rule is added."
+  "set_aside": "Investability (retail-only classes, open-to-investors flags) is not a concern for this study and no rule is added.",
+  "provenance": {
+    "built": "2026-11-17",
+    "note": "Panels stay local and ignored by Git. The v1 rebuild reproduces every registered v1 count, but its database file hash differs from the one registered in v1 (DuckDB files are not byte-identical across builds). The v1 config and the raw input hashes match v1.",
+    "fund_panel_code_sha256": "38ff46113fd4be6e740e9e2fd0c86c8cd5046b3cffdae3f806fb80d026fb7f47",
+    "inputs_sha256": {
+      "D1a": "2dd6772a0fa618ca473d9651ecde283c2f107012668832215acf74d17450d738",
+      "D1b": "0e2edbd6d60d309320005d45d928ab6c34216ec0a138bd1a771aa33478d32b60",
+      "D2_research": "a3894d74d553cab812eabbe706bdbf443c97eb20b24b05e3e5f3ce47e46b90bb",
+      "D2_momentum": "81ff7cab5517159daa5a66c83fd90d4076a0864be2d5fef179719c0f9049a8cb"
+    },
+    "v1_rebuild": {
+      "config": "configs/fund_panel.json",
+      "config_sha256": "f72d6eefdb6c851b557b3320f341d2480c9055c6577aa77950f16c06c5af9795",
+      "db_sha256": "d44797709f08b7f4f4afb876b150606326726efb77eb9702c3507821b3e4e739",
+      "panel_parquet_sha256": "4c94119af58db19d7bd70b3e5bad19fb46e6240cd753b572ca9fd336644331f0",
+      "class_lineage_sha256": "12840b3abba95175f3e9f6afb1caa9e19ca8f2a7f9654009599d07d44397551f"
+    },
+    "v2": {
+      "config": "configs/fund_panel_v2.json",
+      "config_sha256": "c733cefd3cee02a577a32e61909c463b9f93cf32998170e8ca951dcd792ea222",
+      "db_sha256": "a3d65f247007d212c13c39064f15fc1351e2322fbdf9d4006d005d02dd4d8092",
+      "panel_parquet_sha256": "9b80b166e0e769f9a8983287dbfdefbc29f57660256b0b35b4a2143379c344fe",
+      "class_lineage_sha256": "0b13ca50fcce2f59013fcb312c4462510fcc3e37d11db32932bd7598e1fb5a52"
+    },
+    "comparison_report": "reports/2026-11-17-v1-v2-panel-comparison.md"
+  }
 }

@@ -42,8 +42,8 @@ Set aside: investability (retail-only classes, open-to-investors flags). It is n
 ## Required before evaluation
 
 1. ~~Implement the rules in the panel, with tests.~~ Done: identity rule, name rule, size floor and portfolio-number flag (not yet rebuilt).
-2. Rebuild the panel and record new code, config and panel hashes in `configs/research_protocol_v2.json`.
-3. Rerun the coverage and missing-target counts and compare them with v1.
-4. Report v1 and v2 side by side, plus the sensitivities in the table above.
+2. ~~Rebuild the panel and record new code, config and panel hashes.~~ Done.
+3. ~~Rerun the coverage and missing-target counts and compare them with v1.~~ Done.
+4. ~~Report v1 and v2 side by side.~~ Done. The sensitivities in the table above are still to run.
 
-Status: **design registered; the panel has not been rebuilt and no v2 counts exist.**
+Status: **panel rebuilt 2026-11-17; coverage compared with v1 in the [comparison report](2026-11-17-v1-v2-panel-comparison.md). Hashes are in the protocol JSON. The sensitivities in the table above have not been run, and no model or performance result exists.**
