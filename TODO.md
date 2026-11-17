@@ -4,7 +4,7 @@
 
 **Scope:** We use only fund-level and fund-family information (things like money flowing in and out, and recent returns). We do not use what funds hold. A stricter test using the exact data as it looked back then is a possible later extension.
 
-The plan is written up in `reports/2026-11-12-research-protocol-v1.md`. Pause for review after each major milestone.
+The plan is written up in `reports/2026-11-12-research-protocol-v1.md`, with one change (single-class funds) in `reports/2026-11-17-research-protocol-v2.md`. Pause for review after each major milestone.
 
 ## 1. Write down the plan before looking at results — done
 
@@ -23,8 +23,8 @@ The plan is written up in `reports/2026-11-12-research-protocol-v1.md`. Pause fo
 
 **Still to review before we evaluate anything.** If any of these makes us change the plan, save it as a new version first.
 
-- [ ] **Data revisions:** The data may have been corrected after the dates we assume it became public. We have not verified this.
-- [ ] **Missing group labels:** Some share classes have no group assigned.
+- [X] **Data revisions:** Reviewed what each source publicly says about release dates and corrections. No source gives a publication date per observation, and the CRSP notes confirm repeated corrections to returns, TNA, fees and class groups, with no sizes given. See the [summary](reports/2026-11-17-crsp-release-notes-summary.md) and [full review](reports/2026-11-17-data-publication-and-revision-review.md). The size of the changes is still unmeasured.
+- [ ] **Missing group labels:** Some share classes have no group assigned. About 74% of ungrouped funds look like genuine single-class funds. Decision made: count them as their own funds (protocol v2). The panel rebuild is listed in section 3.5.
 - [ ] **Fund-type filter:** We pick fund types partly by name, which is imperfect.
 - [ ] **Who was in the universe:** We are unsure which funds were in the sample at each point in time.
 - [ ] **Could an investor really buy these?** We have not confirmed that a retail investor could buy these share classes, or what investors received when a fund merged.
@@ -37,6 +37,16 @@ Results are in the [baseline report](reports/2026-11-16-chronological-baseline.m
 - [X] Build two predictors: a simple "recent winners" ranking, and a basic statistical model using money flows and recent returns. Each month, rank funds, split them into ten equal groups, and record the funds in each group and how many outcomes we actually observed. The model is retrained in time order and tuned only on past data.
 
 ## 3.5 Deal with missing outcomes — next
+
+First, apply the protocol v2 decision to count single-class funds as their own funds:
+
+- [ ] **Settle fund identity:** Decide how to link a fund's history when it has no group at one date and a group later, using only what was known at each date.
+- [ ] **Decide on possible true gaps:** About 8% of ungrouped funds share a portfolio number with other classes. Decide whether to flag or exclude them.
+- [ ] **Change the panel and test it:** Build the single-class rule into the panel code, with tests.
+- [ ] **Rebuild and record:** Rebuild the panel and save its new file fingerprints in the v2 settings.
+- [ ] **Compare with v1:** Rerun the coverage and missing-outcome counts and report v1 and v2 side by side.
+
+Then the missing-outcome work:
 
 What we have learned so far:
 

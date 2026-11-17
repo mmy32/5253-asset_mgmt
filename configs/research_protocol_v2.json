@@ -1,0 +1,29 @@
+{
+  "protocol_id": "fund-flow-momentum-v2",
+  "supersedes": "fund-flow-momentum-v1",
+  "registered_date": "2026-11-17",
+  "status": "design_registered_pending_panel_rebuild",
+  "change_policy": "Every v1 setting not listed under changes still applies. Any further change requires a new version and a dated explanation before evaluation.",
+  "rationale": "CRSP removed class-group ids for funds with a single share class (April 2024 release notes). A test on D1b found that about 74% of funds with no group look like single-class funds, so v1 excluded real funds. See reports/2026-11-17-crsp-release-notes-summary.md.",
+  "outcome_independence": "The decision rests on release notes and on D1b group and portfolio-number fields. No return, outcome or portfolio result was used. Note that v1 baseline outcomes had already been examined (reports/2026-11-16-chronological-baseline.md) before this change.",
+  "changes": {
+    "sample.class_group_rule": {
+      "v1": "classes with no crsp_cl_grp on the latest available summary are excluded as missing_class_group",
+      "v2": "classes with no crsp_cl_grp on the latest available summary are treated as single-class funds and identified by crsp_fundno",
+      "applies_to": "formation universe, feature history, targets and selected-portfolio weights",
+      "sensitivity": "report v1 (exclude ungrouped classes) alongside v2 for every headline count"
+    }
+  },
+  "open_design_points": [
+    "Fund identity over time: a class can lack a group at one formation date and have one at a later date. Decide how its return history is linked before rebuilding the panel, using only information available at each formation date.",
+    "Ungrouped funds that share a crsp_portno with other classes (about 8% of ungrouped funds) may be genuine gaps rather than single-class funds. Decide whether to flag or exclude them.",
+    "Ungrouped funds with no crsp_portno (about 18%) cannot be tested and are treated as single-class under the rule above."
+  ],
+  "required_before_evaluation": [
+    "Implement the rule in the panel with tests.",
+    "Rebuild the panel and record new code, config and panel hashes in this file.",
+    "Rerun the coverage and missing-target counts and compare them with v1.",
+    "Report v1 and v2 side by side."
+  ],
+  "unchanged": "All other v1 settings: dates, features, availability lags, target, model, portfolios, costs, inference and freeze conditions."
+}
