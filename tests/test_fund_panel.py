@@ -125,8 +125,33 @@ def test_panel_preserves_missing_returns_and_respects_lags(tmp_path: Path):
         assert db.execute("SELECT count(*) FROM classes WHERE return_month='2020-04-30' "
                           "AND universe_status='other_objective'").fetchone()[0] == 2
         assert db.execute("SELECT max(abs(next_month_abnormal_return-.005)) FROM panel").fetchone()[0] < 1e-8
+        prior_query = """SELECT fund_id, formation_date, flow, momentum_12_2,
+            CASE WHEN target_assumed_available_at <= DATE '2020-02-29'
+                 THEN next_month_abnormal_return END AS matured_target
+            FROM panel WHERE formation_date <= DATE '2020-02-29'
+            ORDER BY fund_id, formation_date"""
+        prior = db.execute(prior_query).df()
     finally:
         db.close()
+    # Future source revisions must not change already available features or labels.
+    path = raw / 'D1a_CRSP_monthly_returns.csv'
+    with path.open(newline='') as f:
+        records = list(csv.DictReader(f))
+    for record in records:
+        if record['caldt'] > '2020-02-29':
+            record['mret'] = '.99'
+    write_csv(path, names, records)
+    changed = attrs[0].copy()
+    changed.update(caldt='2021-01-31', crsp_obj_cd='ICQY', crsp_cl_grp='999')
+    write_csv(raw / 'D1b_CRSP_fund_summary.csv', columns, attrs + [changed])
+    revised_output = tmp_path / 'future_revisions'
+    build_panel(raw, revised_output, config)
+    revised_db = duckdb.connect(str(revised_output / 'fund_panel.duckdb'), read_only=True)
+    try:
+        pd.testing.assert_frame_equal(prior, revised_db.execute(prior_query).df())
+    finally:
+        revised_db.close()
+
     # Two records for one share class and economic month must fail, not double count.
     with (raw / 'D1a_CRSP_monthly_returns.csv').open('a', newline='') as f:
         csv.writer(f).writerow(['000001', '2017-02-27', '10', '.01'])

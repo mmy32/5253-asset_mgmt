@@ -6,6 +6,8 @@ Status: **design v1 recorded; panel and missing-outcome validation required befo
 
 The executable settings and snapshot hashes are in `configs/research_protocol_v1.json`; the deterministic month assignments are in `configs/research_folds_v1.csv`. The original implementation plan remains untracked. The model, retrospective feature view and portfolio evaluation have not been implemented or run. Aggregate target moments across the previously built panel were inspected during earlier diagnostics, so this work is not fully blind to the raw target distribution; no ranked-portfolio or predictive-model performance has been examined.
 
+> **Later status (2026-11-16):** The chronological baseline was run after this protocol was recorded. See the [baseline report](2026-11-16-chronological-baseline.md); the original registration statements below describe the state at registration.
+
 ## Question and hypotheses
 
 Does fund flow and momentum predict next-month abnormal returns under chronological training and conservative information-availability assumptions, and does a long-only portfolio add value after fees and supportable costs? The baseline is an **availability-lagged chronological backtest using revised data**, not a verified strict point-in-time reconstruction.

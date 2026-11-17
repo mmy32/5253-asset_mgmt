@@ -45,7 +45,9 @@ def summarize(db: duckdb.DuckDBPyConnection, protocol: dict[str, Any]) -> dict[s
     results: dict[str, Any] = {}
     for name, (start, end, cutoff) in periods.items():
         row = db.execute(sql, [cutoff, cutoff, start, end])
-        results[name] = dict(zip([col[0] for col in row.description], row.fetchone()))
+        counts = row.fetchone()
+        assert counts is not None
+        results[name] = dict(zip([col[0] for col in row.description], counts))
     month_rows = db.execute("""
       WITH months AS (
         SELECT CAST(last_day(d) AS DATE) AS formation_date
@@ -62,14 +64,17 @@ def summarize(db: duckdb.DuckDBPyConnection, protocol: dict[str, Any]) -> dict[s
     """, [sample["evaluation_formation_start"], sample["evaluation_formation_end"],
             sample["evaluation_formation_start"], sample["evaluation_formation_end"],
             sample["minimum_funds_per_month"]]).fetchone()
+    assert month_rows is not None
     results["evaluation_monthly_feature_coverage"] = dict(zip(
         ("calendar_months", "min_eligible", "max_eligible", "months_below_minimum"), month_rows
     ))
-    results["duplicate_fund_month_keys"] = db.execute("""
+    duplicate_rows = db.execute("""
       SELECT count(*) FROM (
         SELECT fund_id, formation_date FROM panel GROUP BY 1,2 HAVING count(*) > 1
       )
-    """).fetchone()[0]
+    """).fetchone()
+    assert duplicate_rows is not None
+    results["duplicate_fund_month_keys"] = duplicate_rows[0]
     timing = db.execute("""
       SELECT count(*) FILTER (WHERE return_month IS NULL OR formation_date IS NULL OR
           last_day(return_month + INTERVAL 1 MONTH) <> formation_date),
@@ -83,6 +88,7 @@ def summarize(db: duckdb.DuckDBPyConnection, protocol: dict[str, Any]) -> dict[s
           (target_assumed_available_at IS NULL OR target_assumed_available_at <= formation_date))
       FROM panel
     """).fetchone()
+    assert timing is not None
     results["timing_violations"] = dict(zip(
         ("month_alignment", "monthly_return", "summary", "fee", "target"), timing
     ))

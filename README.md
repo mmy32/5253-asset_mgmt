@@ -2,7 +2,7 @@
 
 This project tests whether fund flow and momentum predict next-month risk-adjusted returns in a chronological backtest with conservative availability assumptions. The supplied data are revised vintages, so the baseline is not a verified strict point-in-time study. See the [research proposal](reports/2026-10-22-research-proposal.md) and [backlog](TODO.md).
 
-The repository includes a raw-data audit, an assumption-based fund-month panel and a locally registered [research protocol](reports/2026-11-12-research-protocol-v1.md). Predictive models are not implemented yet. Holdings are outside the current scope; D5 is incomplete and is not used.
+The repository includes a raw-data audit, an assumption-based fund-month panel and a locally registered [research protocol](reports/2026-11-12-research-protocol-v1.md). The chronological momentum and ridge baselines are implemented; their registered spread is unestimable because no month has both extreme deciles fully observed. See the [baseline report](reports/2026-11-16-chronological-baseline.md). Holdings are outside the current scope; D5 is incomplete and is not used.
 
 ## Setup
 
@@ -40,6 +40,14 @@ python -m src.data_processing.sample_reconciliation --output-dir data/interim/re
 
 This reads the registered panel database without modifying it, verifies its hash and writes retrospective attrition, grouping sensitivities and annual screen overlap. The full-file mapping is a look-ahead diagnostic, not a model input. See the [reconciliation report](reports/2026-11-12-sample-reconciliation.md).
 
+## Diagnose panel and target coverage
+
+```bash
+python -m src.data_processing.target_diagnosis --raw-dir /path/to/raw --output-dir data/interim/target-diagnosis-new
+```
+
+This reads the registered panel and factor files after hash checks and reports ordered missing-target causes, overlaps, class-level exclusions and formation-time characteristics. It does not evaluate a model. See the [panel validation and missing-target report](reports/2026-11-16-panel-validation.md).
+
 ## Check protocol coverage
 
 ```bash
@@ -60,3 +68,11 @@ mypy src
 ## Layout
 
 `configs/` contains source settings. `src/data_loader/` contains the audit, `tests/` its fixtures, and `reports/` research documents. `data/` is for ignored raw and derived data; source paths are configurable and raw inputs are never edited by the audit.
+
+## Run the chronological baseline
+
+```bash
+python -m src.models.baseline --output-dir data/interim/baseline-new
+```
+
+The output includes forecasts, constituent weights, monthly outcome coverage and a training audit. Existing output directories are refused.

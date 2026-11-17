@@ -82,8 +82,12 @@ def reconcile(db: duckdb.DuckDBPyConnection, start: str, end: str,
           AS selected_ambiguous_summary_rows
       FROM retro
     """)
-    waterfall_dict = dict(zip([x[0] for x in waterfall.description], waterfall.fetchone()))
-    waterfall_dict["source_rows"] = db.execute("SELECT count(*) FROM class_returns").fetchone()[0]
+    waterfall_row = waterfall.fetchone()
+    assert waterfall_row is not None
+    waterfall_dict = dict(zip([x[0] for x in waterfall.description], waterfall_row))
+    source_row = db.execute("SELECT count(*) FROM class_returns").fetchone()
+    assert source_row is not None
+    waterfall_dict["source_rows"] = source_row[0]
     mapping = db.execute("""
       SELECT count(*) AS selected_class_months,
         count(*) FILTER (WHERE crsp_cl_grp IS NULL OR trim(crsp_cl_grp)='') AS latest_missing,
@@ -117,7 +121,9 @@ def reconcile(db: duckdb.DuckDBPyConnection, start: str, end: str,
           AND full_file_group IS NOT NULL) AS last_future_only_date
       FROM mapping
     """, [summary_lag_days])
-    mapping_dict = dict(zip([x[0] for x in mapping.description], mapping.fetchone()))
+    mapping_row = mapping.fetchone()
+    assert mapping_row is not None
+    mapping_dict = dict(zip([x[0] for x in mapping.description], mapping_row))
     db.execute("""
       CREATE TEMP TABLE aligned AS
       SELECT *, coalesce(lag_status,'missing_local_row') AS local_status
@@ -151,7 +157,9 @@ def reconcile(db: duckdb.DuckDBPyConnection, start: str, end: str,
           retro_summary_date<lag_summary_date) AS lagged_later
       FROM aligned
     """)
-    date_dict = dict(zip([x[0] for x in lag_dates.description], lag_dates.fetchone()))
+    date_row = lag_dates.fetchone()
+    assert date_row is not None
+    date_dict = dict(zip([x[0] for x in lag_dates.description], date_row))
     yearly = db.execute("""
       SELECT year(formation_date) AS year, count(*) AS total,
         count(*) FILTER (WHERE retro_status='selected' AND local_status='selected') AS both,

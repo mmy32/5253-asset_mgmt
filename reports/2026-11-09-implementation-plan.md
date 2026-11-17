@@ -2,7 +2,7 @@
 
 Updated: 2026-11-12
 
-Status: protocol v1 registered locally on 2026-11-12; panel and target-coverage validation remain open, and no model or portfolio performance has been evaluated.
+Status: protocol v1 registered locally; Milestone 2 panel validation and Milestone 3 chronological baselines are complete for review. The registered spread is unestimable because no month has complete outcomes in both extreme deciles.
 
 ## Research question and scope
 
@@ -86,9 +86,11 @@ The first six rows are share-class months; the last is an approximate fund-month
 
 **Completed locally:** v1 records the question, hypotheses, A–D designs, exact date rules, feature and target definitions, model selection, investor assumptions and inference settings. The fold calendar and input/panel hashes are recorded; the coverage check does not calculate outcome statistics. See `reports/2026-11-12-research-protocol-v1.md` for counts and unresolved validation gates. A design or input change requires a new version.
 
-**Review gate:** review v1 and its assumptions; the sample and model remain unvalidated. Reproducing the approximate fund count is a diagnostic, not a prerequisite for the entire project.
+**Review gate:** review the documented panel assumptions and the baseline coverage failure before further evaluation. Reproducing the approximate fund count remains a diagnostic, not a prerequisite for the project.
 
 ## Milestone 2: Canonical panel and missing-target diagnosis
+
+**Status: completed for review.** See the [panel validation and missing-target report](2026-11-16-panel-validation.md) for the reconciled row counts, canonical working rules, tests and remaining limitations. Actual selected-portfolio missing weights are deferred until Milestone 3 produces rankings; report them there without changing formation eligibility.
 
 1. **Completed:** the [sample reconciliation](2026-11-12-sample-reconciliation.md) reproduces the supplied class-month waterfall and compares both screens on aligned formation months. The supplied 1,060,735 fund-month estimate matches a full-file group-mapping sensitivity that can use later information; a last-nonblank as-of mapping gives 1,060,747. That numerical match does not establish the original method. The reported 13.0% missing is confirmed for the latest as-of summary. The canonical mapping and publication rules remain to be validated in step 2.
 2. Select one canonical loader, factor parser and eligibility specification. Preserve raw files and lineage. Validate month normalization, lagged-TNA aggregation, net/gross treatment, factor windows, class-group changes and the assumptions on quarterly and fiscal availability. Keep fund and family age unavailable until historical inception information is defensible.
@@ -98,6 +100,8 @@ The first six rows are share-class months; the last is an approximate fund-month
 **Review gate:** an auditable panel and missingness report reconcile all rows, demonstrate no future inputs determine historical features or eligibility, and document unresolved release/vintage assumptions. Do not choose the look-ahead grouping rule merely because it reproduces 1,060,735; explain the mapping trade-off and use a defensible panel.
 
 ## Milestone 3: End-to-end chronological baseline
+
+**Complete for review:** [baseline report](2026-11-16-chronological-baseline.md). Rankings exist for all 81 months, but zero months have both extreme-decile abnormal returns fully observed. The primary spread is unestimable; retain the registered missing-weight rule.
 
 Build one monthly momentum ranking and the primary regularized flow-and-momentum model with prior-only training, validation and preprocessing. Generate fund rankings, equal-weighted research deciles, constituent weights, outcomes and missing-outcome coverage before adding neural networks or sentiment.
 
