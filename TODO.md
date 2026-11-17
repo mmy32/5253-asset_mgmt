@@ -1,60 +1,84 @@
 # TODO
 
-Project: test fund-level predictability with an **availability-lagged chronological backtest** and evaluate long-only net performance. Strict historical-vintage point-in-time validation is a separate extension. Scope is Option A: fund and family predictors; holdings-based predictors are out of scope. The research protocol in `reports/2026-11-12-research-protocol-v1.md` describes the current protocol and review gates.
+**Goal:** Find out whether we can predict which mutual funds will do well, using only information an investor would actually have had at the time. We test this by "replaying history" month by month, always leaving a delay between when data is dated and when we assume it was public. Then we check whether a simple buy-only portfolio would have made money after costs.
 
-Stop after each major milestone for review.
+**Scope:** We use only fund-level and fund-family information (things like money flowing in and out, and recent returns). We do not use what funds hold. A stricter test using the exact data as it looked back then is a possible later extension.
 
-## 1. Primary research protocol — recorded locally
+The plan is written up in `reports/2026-11-12-research-protocol-v1.md`. Pause for review after each major milestone.
 
-- [X] Registered `configs/research_protocol_v1.json`, the deterministic month-fold calendar and `reports/2026-11-12-research-protocol-v1.md`. The primary study uses flow and momentum without sentiment; A–C distinguish random folds, chronology and conservative lags.
-- [X] Recorded the proposed monthly dates, ridge grid, 12-month moving-block bootstrap, 10,000 draws, seed 5253, rebalancing, illustrative cost scenarios and working retail class-selection rule. The chronological baseline has been run; its registered spread is unestimable because of missing outcomes.
-- [X] Ran a read-only completeness and assumed-date check; record any design/data changes as a new protocol version before evaluation. Panel validation is documented in Milestone 2; historical vintages and investor access remain unverified.
+## 1. Write down the plan before looking at results — done
 
-## 2. Canonical panel and missing-target diagnosis — complete for review
+- [X] Save the study plan: which information we use (money flows and recent returns, no investor-sentiment data), the monthly calendar, and three comparison setups (A: random splits, B: replaying history in order, C: replaying history with extra-cautious delays).
+- [X] Fix the testing details in advance: dates, how the model is tuned, how we measure uncertainty, how often we rebalance, example trading costs, and how we pick one share class per fund for a retail investor.
+- [X] Check the data is complete and the assumed release dates are reasonable. Any later change to the plan gets saved as a new version before we evaluate anything.
+- [X] Note what is still unverified: what the data looked like on the day it was released, and whether a retail investor could really buy these funds.
 
-- [X] Reconciled the class-level sample and fund mappings. The working panel uses the latest available group on the latest eligible summary, never future mapping or an unsupported singleton. Prior available group carry-forward is a documented sensitivity.
-- [X] Reconciled all 666,430 common-window formation rows by mutually exclusive target status and year; 295,308 targets are timely and 2,550 observed targets are late. The separate class-level upstream waterfall and overlapping risks are reported in [panel validation](reports/2026-11-16-panel-validation.md).
-- [X] Compared observable formation characteristics and coverage by year and objective. Specified missing-weight, merger and closure treatment; selected-portfolio missing weights are reported in the Milestone 3 baseline.
-- [X] Chose the working fund panel and factor parser; verified the factor parsers agree on the supplied files and tested timing, aggregation, duplicate returns and future-source changes. Existing panel hashes and v1 rules remain unchanged.
-- [X] Recorded the proposed 81 evaluation months, 82,539 feature-complete rows, 2,268 of those with missing targets and 1,441 with missing net returns. No month has fewer than 20 feature-complete funds. A missing net return occurs in every evaluation month among the eligible universe.
-- [ ] Review the remaining limitations before evaluation. Register a new protocol version before evaluation if changing the v1 panel or rules. Sub-items:
-  - [ ] Unverified historical data vintages and availability: data may have been revised after the dates we assume they were public.
-  - [ ] Incomplete class groups: some share classes lack group assignments.
-  - [ ] Imperfect objective/name screens: name-based fund-objective screening is imperfect.
-  - [ ] Historical regression membership: membership in the regression universe over time is uncertain.
-  - [ ] Absent verified investor access and merger proceeds: not verified that a retail investor could buy these classes, or what merger proceeds look like.
-  - [ ] Nonrandom missingness: funds that merge or close drop out, so missing outcomes are not random.
+## 2. Build the clean fund dataset and find out why outcomes are missing — done, awaiting review
 
-## 3. Chronological baseline — complete for review
+- [X] Match share classes to funds and funds to groups. We use the latest information that was available at the time, never information from the future.
+- [X] Count every fund-month in the shared date range (666,430) and sort each into a category: outcome arrived on time (295,308), outcome arrived late (2,550), or outcome missing. See the [panel validation report](reports/2026-11-16-panel-validation.md).
+- [X] Check whether funds with missing outcomes look different from the rest, by year and by fund type. Decide how to handle funds that merged or closed.
+- [X] Choose the dataset and the source for the market-factor data. Confirm both factor sources agree, and test for timing errors, double-counted returns and later edits to the source files.
+- [X] Record the test window: 81 months, with 82,539 fund-months that have all the inputs we need. Every month has at least 20 usable funds. Some outcomes are missing (2,268 fund-months have no future outcome, and 1,441 have no net return).
 
-See [Milestone 3 results](reports/2026-11-16-chronological-baseline.md): both models forecast all 81 months, but neither has a fully observed top-minus-bottom abnormal-return month. Do not relax missingness rules to manufacture a spread. Matched experiments and investor evaluation below belong to Milestone 4.
+**Still to review before we evaluate anything.** If any of these makes us change the plan, save it as a new version first.
 
-- [X] Implement a momentum ranking and a regularized linear model using flow and momentum. Produce month-end rankings, equal-weighted research deciles, constituent weights and realized outcome coverage, with chronological refits and prior-only tuning.
+- [ ] **Data revisions:** The data may have been corrected after the dates we assume it became public. We have not verified this.
+- [ ] **Missing group labels:** Some share classes have no group assigned.
+- [ ] **Fund-type filter:** We pick fund types partly by name, which is imperfect.
+- [ ] **Who was in the universe:** We are unsure which funds were in the sample at each point in time.
+- [ ] **Could an investor really buy these?** We have not confirmed that a retail investor could buy these share classes, or what investors received when a fund merged.
+- [ ] **Missing is not random:** Funds that merge or close vanish from the data, so the missing outcomes are likely biased toward poor or unusual funds.
 
-## 3.5 Resolve missing-outcome coverage — next
+## 3. First real test: replay history in order — done, awaiting review
 
-- [X] Attribute missing weight in selected extreme-decile portfolios by month and model, including overlaps and formation-time characteristics. See [selected coverage](reports/2026-11-16-selected-coverage.md). No new performance was computed.
-- [X] Trace missing outcomes in the available export: absent future classes are terminal observations; 234 of 239 unique missing-expense cases have a historical expense whose assumed availability is too late. See [source recovery review](reports/2026-11-16-source-recovery-review.md). No outcomes have been recovered; source acquisition and a possible delayed-label protocol remain pending.
-- [ ] Choose and document a follow-up estimand and missingness treatment, including any observed-constituent diagnostic, explicit renormalization, coverage thresholds, assumptions and selection bias. Retain the v1 unestimable result.
-- [ ] Version and freeze any new protocol and input hashes before evaluating new outcomes; document that v1 outcomes have already been examined. Test timing and weights, report paired-month coverage, and apply inference only when its requirements are met. If coverage cannot be recovered defensibly, report the unanswered question.
+Results are in the [baseline report](reports/2026-11-16-chronological-baseline.md). Both models made predictions for all 81 months. But in no month do we have complete outcomes for both the top-ranked and bottom-ranked funds. So we cannot yet say whether the top beats the bottom. We will not loosen the rules just to get an answer.
 
-**Review gate:** stop before evaluating the follow-up; review the proposed method and its limitations.
+- [X] Build two predictors: a simple "recent winners" ranking, and a basic statistical model using money flows and recent returns. Each month, rank funds, split them into ten equal groups, and record the funds in each group and how many outcomes we actually observed. The model is retrained in time order and tuned only on past data.
 
-## 4. Matched experiments and economic evaluation
+## 3.5 Deal with missing outcomes — next
 
-- [ ] Run matched experiments A–C, preserving fixed feature definitions, target and evaluation dates where feasible. Report paired monthly A–B and B–C differences, training-set sizes, each design's complete formation universe and the ex-post matched outcome sample.
-- [ ] Evaluate the long-only portfolio separately using observed net share-class returns. Working investor: U.S. retail. Specify one-class-per-fund selection, open status, access, minimums, turnover, loads and redemption costs. If those cannot be established, label the result a net-return proxy rather than an investable portfolio.
-- [ ] Compare long-only results with a suitable passive alternative and an equal-weighted eligible active-fund portfolio. Report missing realized weights, risk-adjusted returns, paired monthly uncertainty and effect sizes; do not subtract annual expenses twice.
+What we have learned so far:
 
-## 5. Extensions and reporting
+- [X] For the top and bottom funds we picked, we measured how much was missing each month and why. See [selected coverage](reports/2026-11-16-selected-coverage.md). No new performance numbers were computed.
+- [X] We traced where the missing outcomes went. Funds that stop appearing have simply ended. For 234 of 239 missing-expense cases, the expense data exists but arrived later than we assumed it would be public. See [source recovery review](reports/2026-11-16-source-recovery-review.md). Nothing has been recovered yet.
 
-- [ ] Add broader available fund/family features and a paper-inspired 64-unit ReLU network after the baseline works. Compare the network with a linear sentiment-interaction model before attributing gains to nonlinear complexity. Prediction-strength weighting is secondary and requires a prespecified formula and tie/zero-weight rules.
-- [ ] Run a limited, prespecified set of lag, mapping and return-cutoff sensitivities. Record WRDS release vintages if available. Optional: obtain CFNAI (D4) and the additional eight-factor inputs (D8), document vintages, then run those checks. Strict PIT is a separate extension if appropriate historical data become available.
-- [ ] Write up the sample waterfall, common and full-universe coverage, comparisons, costs, missing outcomes, confidence intervals, specification count and limitations. The paper reports **+72% and −119% cumulative abnormal returns for the top and bottom legs**, respectively; those are not themselves a single decile-spread statistic and are not targets to force-match.
+What is left:
 
-## Done and current limitations
+- [ ] **Decide the new question:** Pick a follow-up question we can honestly answer with partial data, and say how we will treat the missing funds.
+- [ ] **List the options:** Compare the choices, such as looking only at funds we can observe, or rescaling the weights to cover the gap, or requiring a minimum share of observed funds.
+- [ ] **Write down the risks:** State the assumptions and how the gaps could bias the answer.
+- [ ] **Keep the original result:** The original "can't be estimated" finding stays on record.
+- [ ] **Freeze before testing:** Save the new plan and the exact input files before looking at any new results. Note that we have already seen the original results.
+- [ ] **Check the mechanics:** Test the timing and the weights before running anything.
+- [ ] **Report the overlap:** Show how many months have outcomes for both the top and bottom groups.
+- [ ] **Only claim what the data supports:** Run the uncertainty analysis only if its requirements are met. If coverage can't be repaired credibly, say plainly that the question is unanswered.
 
-- [X] Research proposal and project scaffold created; latest GitHub history fetched and merged locally. Milestones 2 and 3 were pushed in commit `6912ad0`.
-- [X] Source audit and initial lagged fund-only panel implemented with tests. Reports: `reports/2026-11-09-data-audit.md` and `reports/2026-11-09-fund-panel.md`. The raw observation overlap is 1999-03 through 2025-12; the lagged panel begins in 1999-06.
-- [X] D1a/D1b/D2/D3 loaders, a retrospective objective/name screen and the common-window calculation exist. The reported retrospective screen has 2,739,850 share-class months through 2025-12 after removing 16 share-class returns above 100%; this is a diagnostic, not the lagged fund-panel universe.
-- [X] D5 is incomplete and blocked; D5, D6 and D7 are not needed for Option A. WRDS release vintages remain unrecorded. The chronological baseline was run; its spread is unestimable under the registered missingness rule.
+**Pause for review:** Stop before running the follow-up. Review the proposed method and its weaknesses first.
+
+## 4. Compare setups and check real-world profit
+
+- [ ] **Compare setups A, B and C:** Keep the inputs, the target and the test dates the same wherever possible. Report month-by-month differences between A and B and between B and C, how much training data each used, and how many funds ended up in each.
+- [ ] **Test the buy-only portfolio:** Use real returns after fees for retail investors. Decide how we pick one share class per fund and whether the fund is open to new money. Also decide on minimum investments, trading volume, sales charges and exit fees.
+- [ ] **Be honest about investability:** If we cannot confirm an investor could actually buy these funds, call the result an "after-fees return estimate", not a real portfolio.
+- [ ] **Compare against simple alternatives:** Test against a passive index fund and against an equal-weighted basket of all eligible active funds.
+- [ ] **Report the full picture:** Show missing weights, risk-adjusted returns, month-by-month uncertainty and the size of the effect. Do not subtract annual fees twice.
+
+## 5. Extensions and write-up
+
+- [ ] **Add more inputs:** Bring in more fund and family information, and a small neural network inspired by the paper.
+- [ ] **Fair comparison for the network:** Compare it with a simpler model that also uses investor sentiment, so we do not credit complexity for gains that a simpler model could also deliver.
+- [ ] **Weighting by strength (optional):** Weighting funds by how strongly they are predicted is secondary. It needs a formula and tie-handling rules written down first.
+- [ ] **Robustness checks:** Run a small, pre-chosen set of checks on the delays, the fund matching and the return cutoffs.
+- [ ] **Record data versions:** Note which data release we used, if the data provider lists them.
+- [ ] **Optional extra data:** Get the economic-activity index (D4) and the extra eight-factor inputs (D8), note their versions and rerun the checks.
+- [ ] **Write the paper:** Include the sample count at each step, coverage, comparisons, costs, missing outcomes, confidence intervals, how many variations we tried, and the limitations.
+- [ ] **Do not force-match the original paper:** The paper reports +72% for its top group and −119% for its bottom group over time. Those are two separate figures, not a single top-minus-bottom gap, so we should not try to reproduce them.
+
+## Done so far
+
+- [X] Research proposal and project structure created. Milestones 2 and 3 were pushed in commit `6912ad0`.
+- [X] Data audit and a first fund-only dataset, built with tests. Reports: `reports/2026-11-09-data-audit.md` and `reports/2026-11-09-fund-panel.md`. The data overlaps from 1999-03 to 2025-12, and the delayed dataset starts in 1999-06.
+- [X] Data loaders for the first four sources (D1a, D1b, D2, D3), a rough fund-type filter and the shared date range. The filter finds 2,739,850 share-class months through 2025-12, after dropping 16 returns above 100%. This is a diagnostic check, not the final dataset.
+- [X] D5 is incomplete and blocked, but D5, D6 and D7 are not needed for this scope. The data provider's release versions are still unrecorded.
+- [X] The baseline was run, and its top-minus-bottom result cannot be estimated under our missing-data rule.
