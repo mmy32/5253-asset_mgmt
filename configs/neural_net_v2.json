@@ -1,0 +1,84 @@
+{
+  "name": "neural-network-setup-a-v2",
+  "status": "run_2026-11-17",
+  "purpose": "Reproduce the paper's design: a feedforward network under random three-fold evaluation (setup A), compared with ridge on the same inputs and folds.",
+  "inputs": [
+    "flow",
+    "momentum_12_2",
+    "prior_month_abnormal_return",
+    "tna",
+    "expense_ratio",
+    "turnover_ratio",
+    "family_fund_count",
+    "family_tna_any",
+    "family_flow_any",
+    "family_momentum_any"
+  ],
+  "inputs_note": "Ten inputs: six fund-level inputs and four family inputs. The three *_any family inputs are built at model time (src/models/family_features.py) as sums or TNA-weighted means over whichever sibling funds in the same family and month have a value; the panel's all-siblings rule is dropped. Siblings are funds in the v2 panel, so funds below the 5 million floor do not count. A fund with no family or no usable sibling has a missing family input and drops out. Fund age is not built. Inputs are rank-normalised to [-1, 1] within each month. No imputation. 306,103 complete rows in 2002-01 to 2025-10, 90,663 in the evaluation window.",
+  "grid": {
+    "hidden_layers": [
+      1,
+      2,
+      3
+    ],
+    "first_layer_units": [
+      64,
+      32
+    ],
+    "keep_prob": [
+      0.9,
+      0.95
+    ],
+    "learning_rate": [
+      0.001,
+      0.1
+    ],
+    "l1": [
+      0.0,
+      1e-05
+    ],
+    "l2": [
+      0.0,
+      0.01,
+      0.001
+    ]
+  },
+  "grid_note": "144 settings from the paper's Table C.1. Units halve with each layer. The paper lists dropout as 0.90 and 0.95; read here as the probability of keeping a unit.",
+  "training": {
+    "batch_size": 1024,
+    "max_epochs": 30,
+    "patience": 3,
+    "ensemble_size": 8,
+    "seed": 5253
+  },
+  "training_note": "Adam, mean squared error, early stopping on the validation fold. Batch size, epoch limit and patience are not stated in the paper and are our choices. Tuning uses one fit per setting. The chosen setting is then refit 8 times with different seeds and averaged.",
+  "ridge_alpha_grid": [
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0
+  ],
+  "trained_targets": {
+    "abnormal": "next_month_abnormal_return",
+    "net": "target_net_return"
+  },
+  "evaluated_pairs": "A model trained on a target is evaluated on that same target only.",
+  "setup": "A: random three-fold evaluation. Folds, rotations and label cutoff come from configs/research_protocol_v1.json experiments.A. One fold trains, one validates, one tests, then rotate.",
+  "known_departures_from_setup_A": "Features are the panel's lagged versions (as in setup C), not the retrospective same-month flow that v1 describes for A. Only the training scheme (random folds, training can include later months) follows setup A.",
+  "panel_columns": [
+    "fund_id",
+    "formation_date",
+    "family_id",
+    "flow",
+    "momentum_12_2",
+    "prior_month_abnormal_return",
+    "tna",
+    "expense_ratio",
+    "turnover_ratio",
+    "family_fund_count",
+    "next_month_abnormal_return",
+    "target_net_return",
+    "target_assumed_available_at"
+  ]
+}

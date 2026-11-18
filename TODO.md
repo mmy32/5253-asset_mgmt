@@ -6,7 +6,7 @@
 
 **Plan documents:** [v1](reports/2026-11-12-research-protocol-v1.md) is the original plan. [v2](reports/2026-11-17-research-protocol-v2.md) changes the sample rules and adds the missing-outcome method below. Pause for review after each major milestone.
 
-**Where we are (2026-11-17):** The v2 panel is built, the missing-outcome method is decided, frozen and checked, and coverage clears the 90% rule in 80 to 81 of 81 months. The spread is run and awaits your review (Part C1): about +22 bps a month on abnormal return, about +2 bps (no evidence) on net return. The neural network from the paper is not built yet (Part C3).
+**Where we are (2026-11-17):** The v2 panel is built, the missing-outcome method is decided, frozen and checked, and coverage clears the 90% rule in 80 to 81 of 81 months. The spread is run and awaits your review (Part C1): about +22 bps a month on abnormal return, about +2 bps (no evidence) on net return. The neural network has been run under setup A and learned almost nothing; ridge on the same ten inputs does better (Part C2).
 
 ---
 
@@ -93,45 +93,43 @@ Findings are packaged in the [point-in-time response](reports/2026-11-17-pit-cha
 2. Add an uncertainty sensitivity that uses all passing months, including isolated ones, and report it alongside the original bootstrap without changing the spread or the 90% rule.
 3. Describe the 5th/95th fills as conditional scenarios. Verify the changes with tests, then rerun on the exact registered v2 database and compare the original and sensitivity results before C2.
 
-### C2. Compare setups and check real-world profit
+### C2. Reproducing the paper with a neural network (largest remaining gap)
 
-- [ ] **Compare setups A, B and C:** Same inputs, target and test dates wherever possible. Report month-by-month differences (A vs B, B vs C), how much training data each used, and how many funds each had.
-- [ ] **Test the buy-only portfolio:** Use after-fee returns. Decide how to pick one share class per fund, and decide on minimum investments, sales charges and exit fees.
-- [ ] **Be honest about investability:** If we cannot confirm an investor could buy these funds, call the result an "after-fees return estimate", not a real portfolio.
-- [ ] **Compare against simple alternatives:** A passive index fund and an equal-weighted basket of all eligible active funds.
-- [ ] **Report the full picture:** Missing weights, risk-adjusted returns, month-by-month uncertainty, effect size. Do not subtract annual fees twice.
+Decided 2026-11-17: the setup A/B/C comparison and the long-only after-fee portfolio test are dropped. The network is evaluated under **setup A only**, the paper's design (random three-fold splits). It was run on 2026-11-17; see the [setup A results](reports/2026-11-17-setup-a-network-results.md).
 
-### C3. Reproducing the paper with a neural network (largest remaining gap)
-
-The paper ([Kaniel, Lin, Pelger, Van Nieuwerburgh](research/MACHINE-LEARNING%20THE%20SKILL%20OF%20MUTUAL%20FUND%20MANAGERS.pdf)) uses a neural network on 59 predictors plus a sentiment index. We have built none of the network and only two of the inputs. The table shows the gap.
+The paper ([Kaniel, Lin, Pelger, Van Nieuwerburgh](research/MACHINE-LEARNING%20THE%20SKILL%20OF%20MUTUAL%20FUND%20MANAGERS.pdf)) uses a neural network on 59 predictors plus a sentiment index. We now have the network and 10 of the inputs.
 
 | Piece | Paper | We have now | What is left |
 |---|---|---|---|
-| Model | One hidden layer, 64 ReLU units | Ridge regression only. It ranks funds almost exactly like plain momentum, so flow adds nothing linearly | Build the network. Test whether nonlinearity or extra inputs make flow matter |
-| Tuning | 144 candidate settings: 1 to 3 layers, 32 or 64 first-layer units, dropout, learning rate, two regularizers. Picked on a validation split | Ridge strength tuned on past data only | Build the tuning grid, with validation only on earlier months |
-| Stability | Average of 8 fits from different random starts | None | Train 8 fits and average them. Fix seeds in the plan |
-| Fund inputs | 3 momentum + 5 fund characteristics (incl. flow) + 5 family characteristics | 2 inputs: flow and 12-2 abnormal-return momentum | Build the remaining fund and family inputs from the fund summary data. Check which exist (expense ratio, turnover, age, size, family size) |
-| Holdings inputs | 46 stock characteristics weighted by fund holdings | None. Holdings pull is incomplete (D5), no accounting data (D7) | **Out of scope.** The paper says flow and momentum carry nearly all the signal, so this is a stated limitation, not something to rebuild |
-| Sentiment | Baker-Wurgler index; the network uses it to amplify flow and momentum when sentiment is high | Loaded (D3) but excluded from the main test | Add as a labeled extension. The index is revised with later data, so it is not strictly real-time |
-| Evaluation | Random 3-fold splits (training can include later months) | Setup B and C replay in order | Build setup A as the paper does, then compare with B and C |
-| Target | Next-month abnormal return, and net return directly | Both defined (Part B) | Train the network on each target separately |
+| Model | One hidden layer, 64 ReLU units | **Built** in `src/models/neural_net.py` (numpy, no new dependency), with a numerical gradient check | Run it |
+| Tuning | 144 candidate settings: 1 to 3 layers, 32 or 64 first-layer units, dropout, learning rate, two regularizers | **Built.** Same 144 settings, one fit each, picked on the validation fold | Run it. Dropout "0.90, 0.95" is read as the probability of keeping a unit |
+| Stability | Average of 8 fits from different random starts | **Built.** The chosen setting is refit 8 times (seeds 5253 to 5260) and averaged | Run it |
+| Fund and family inputs | 3 momentum + 5 fund + 5 family characteristics | **10 inputs:** flow, 12-2 momentum, prior-month abnormal return, size, expense ratio, turnover (fund), and family fund count, family size, family flow, family momentum. The three family averages use whichever sibling funds have a value; the all-siblings rule is dropped (`src/models/family_features.py`). Ranked within each month, no imputation. 306,103 complete rows | Fund age and the remaining paper family inputs are not built. Sub-floor siblings do not count, because the family inputs are built from the panel |
+| Holdings inputs | 46 stock characteristics weighted by fund holdings | None. Holdings pull is incomplete (D5), no accounting data (D7) | **Out of scope.** The paper says flow and momentum carry nearly all the signal, so this is a stated limitation |
+| Sentiment | Baker-Wurgler index; the network uses it to amplify flow and momentum when sentiment is high | Loaded (D3), not used | Add as a labeled extension. The index is revised with later data, so it is not strictly real-time |
+| Evaluation | Random 3-fold splits (training can include later months) | **Built** in `src/models/setup_a.py`, reusing the registered folds, the 90% coverage rule, bounds and bootstrap | Run it. Departure: features are the panel's lagged versions, not the same-month flow v1 describes for setup A. Only the training scheme follows setup A |
+| Comparator | Linear models | **Built.** Ridge on the same 10 inputs, same folds, same rows | Run it |
+| Target | Next-month abnormal return, and net return directly | **Built.** Separate models for each target, each evaluated on its own target only | Run it |
 | Portfolio | Deciles weighted by prediction strength | Equal-weighted deciles | Optional. Needs a weight formula and tie rules written down first |
 | Headline results | Top decile +72%, bottom −119% cumulative abnormal return. About 50 bps per month spread from flow, momentum and sentiment alone | Not comparable | Do not force a match. These are two separate figures, not one spread |
 
 **Order of work for the network:**
 
-- [ ] **Add the remaining fund and family inputs.** Build them with the same availability delays. Test that none use future data.
-- [ ] **Build setup A (random folds)** as the paper does, so we can show how much of any result depends on training on later months.
-- [ ] **Build the network** (one hidden layer, 64 units) with the tuning grid and 8-fit average. Fix seeds. Choose all settings before seeing evaluation outcomes.
-- [ ] **Fair comparison:** Compare the network against ridge using the same inputs, and against a simpler linear model that includes flow-times-sentiment and momentum-times-sentiment terms. This stops us crediting complexity for gains a simple model also delivers.
-- [ ] **Run in order:** Train and evaluate under A, B and C. Report whether the network beats ridge once training is limited to the past.
+- [X] **Add the remaining fund and family inputs:** Done (10 inputs, see the table). Family inputs use any sibling with a value, which raises family momentum from 92k to 493k rows. Built at model time from the panel, so the frozen panel and code hashes are untouched. On the pre-floor fund table the relaxed version matches the strict one exactly where the strict one exists.
+- [X] **Build setup A (random folds):** Done, with tests that test months never enter training or validation and that test rows are not chosen by whether their outcome exists.
+- [X] **Build the network:** Done, with the 144-setting grid, early stopping and the 8-fit average. Training settings not given in the paper (batch size 1024, at most 30 epochs, patience 3, Adam) are in `configs/neural_net_v2.json`.
+- [X] **Fair comparison, same inputs:** Done. Ridge uses the same 10 inputs, folds and rows.
+- [X] **Register and freeze before running:** Done. Hashes are in `configs/research_protocol_v2.json` under `neural_network_extension`, with a note that the two-input spread had already been seen.
+- [X] **Run setup A:** Done (25 minutes). The network learned almost nothing: validation loss barely moved across the 144 settings. On abnormal return it earns about 10 bps a month against 18 bps for ridge on the same ten inputs. Ridge's interval and bounds are above zero. On net return the network collapsed to a constant prediction in 30 of 81 months, so its −11 bps is an artefact of the fund-ID tie rule. Ridge's net-return spread (13 bps) is not distinguishable from zero. See the [results](reports/2026-11-17-setup-a-network-results.md).
+- [ ] **Decide whether to retrain the network:** Any fix is post hoc and must be labelled. Candidates: drop the 0.1 learning rate, train longer, trim or rank the target, treat constant-prediction months as unranked.
+- [ ] **Fair comparison, with sentiment:** Add a simpler linear model with flow-times-sentiment and momentum-times-sentiment terms, so we do not credit the network for gains a simple model also delivers.
 - [ ] **Look inside the network:** Which inputs matter, and whether sentiment interactions appear, as the paper reports.
 - [ ] **Check how long predictability lasts:** The paper reports about three years.
 
-### C4. Extensions and write-up
+### C3. Extensions and write-up
 
 - [ ] **Weighting by strength (optional):** Needs a formula and tie rules first.
 - [ ] **Robustness checks:** A small, pre-chosen set: delays, fund matching, return cutoffs.
 - [ ] **Record data versions:** Which data release we used, if the provider lists it.
 - [ ] **Optional extra data:** Economic-activity index (D4) and the eight-factor inputs (D8). Record versions and rerun checks.
-- [ ] **Write the paper:** Sample counts at each step, coverage, comparisons, costs, missing outcomes, confidence intervals, how many variations we tried, and the limitations.
+- [ ] **Write the paper:** Sample counts at each step, coverage, comparisons, missing outcomes, confidence intervals, how many variations we tried, and the limitations.
