@@ -1,6 +1,6 @@
 # Setup A: neural network and ridge on ten inputs
 
-Date: 2026-11-17. Run under the plan registered in `configs/research_protocol_v2.json` (`neural_network_extension`) with settings in `configs/neural_net_v2.json`. Command: `python -m src.models.setup_a --database data/interim/panels/v2/fund_panel.duckdb --output-dir data/interim/setup_a_v2`. Run time 25 minutes. Outputs (local, not in Git): `constituents.csv`, `tuning_log.csv`, `spread_by_month.csv`, `spread_summary.csv`, `manifest.json` (hashes).
+Date: 2026-11-17. Run under the plan registered in `configs/neural_net_v2_registration.json` (kept separate so the reviewed v2 protocol stays byte-identical) with settings in `configs/neural_net_v2.json`. Command: `python -m src.models.setup_a --database data/interim/panels/v2/fund_panel.duckdb --output-dir data/interim/setup_a_v2`. Run time 25 minutes. Outputs (local, not in Git): `constituents.csv`, `tuning_log.csv`, `spread_by_month.csv`, `spread_summary.csv`, `manifest.json` (hashes).
 
 **Setup A is the paper's design and is not a real-time test.** Months are split into three random folds; a model trains on one, tunes on another and is tested on the third, so training can use months after the test month. Features keep the panel's lagged timing.
 

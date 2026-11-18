@@ -1,0 +1,23 @@
+{
+  "registered": "2026-11-17",
+  "config": "configs/neural_net_v2.json",
+  "config_sha256": "3aa0755bbc800f25b874aecfd33c58d577bc7fe81658d8bcf285814b311dd31c",
+  "code_sha256": {
+    "src/models/setup_a.py": "a75c523916a2e74866d0c4de4908b46df4fa91b4c5e08cea8f4699479fcd7fa2",
+    "src/models/neural_net.py": "d1b09ab61e489aadd0b7efa69c15c61f8d698b01e1df03d8f6a4cc5d4e6236b0",
+    "src/models/linear_model.py": "09f2fd159fe77d9761cfe1c47136257c70bc2a030a24fbabe4193f46da28cec7",
+    "src/models/features.py": "34e237211cf698b01b77125eb598d65e0b83e9cdb451845bbbbee7f2c2bb12a8",
+    "src/models/random_folds.py": "115931692885f2b956e415ac87a280bd3f1899415f25dfb3c1836760b17fcf08",
+    "src/models/family_features.py": "f9f49fa18e0f19b1bfb5a944b4e34aef1770f1bbe7f531e85b48e8acd353362f",
+    "src/models/spread_report.py": "7e63bc68a4cd2fab54b776f7a33c0f9586ddd715964693a02547b39f2e9a0956",
+    "src/models/missing_outcomes.py": "a64f581574bf23c5581c75c52e33818e5f3ffae9a76b315a55b5b7f85d1afbf8",
+    "src/models/block_bootstrap.py": "017333a47583f3d0ac96b04db5fe113c96d48d9e147261e0cc2bebb8e3cf53d7",
+    "src/models/baseline.py": "394c47799c67a8e1020df9a0c68cb2dcfb987174e85de5353bd7fc998d886e95"
+  },
+  "fold_file_sha256": "ac4fc98a36c812314191eb223ddd7d7cd6cc7c029bc075b34ef668d70fac9991",
+  "panel_db_sha256": "a3d65f247007d212c13c39064f15fc1351e2322fbdf9d4006d005d02dd4d8092",
+  "design": "Setup A only (random three folds, rotations from v1). Network with the paper's 144-setting grid and an 8-fit average, and ridge on the same 10 inputs, folds and rows. Each model trained and evaluated on abnormal return and on net return separately. Same 90% coverage rule, 5th/95th bounds and block bootstrap as the v2 spread.",
+  "statement": "Registered before the network or ridge-on-10-inputs was run. The v2 spread for the two-input ridge and momentum had already been seen. Setup A lets training use months after the test month, so results are a retrospective diagnostic, not a real-time forecast.",
+  "departures": "Lagged features (setup C timing), not same-month flow. Family inputs drop the all-siblings rule and are built from the panel, so sub-floor siblings do not count.",
+  "run": "2026-11-17. Results in reports/2026-11-17-setup-a-network-results.md. The network learned almost nothing; its net-return model collapsed to constant predictions in 30 of 81 months, so that row is an artefact of the fund-ID tie rule."
+}
